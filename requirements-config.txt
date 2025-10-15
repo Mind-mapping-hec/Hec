@@ -1,0 +1,185 @@
+# requirements.txt
+Flask==3.0.0
+flask-cors==4.0.0
+flask-socketio==5.3.6
+python-socketio==5.11.0
+Pillow==10.2.0
+python-dotenv==1.0.0
+gunicorn==21.2.0
+eventlet==0.35.1
+redis==5.0.1
+celery==5.3.4
+pytest==8.0.0
+pytest-flask==1.3.0
+
+# requirements-dev.txt (pour développement)
+black==24.1.1
+flake8==7.0.0
+mypy==1.8.0
+pre-commit==3.6.0
+
+# .env (Configuration environnement)
+FLASK_APP=app.py
+FLASK_ENV=development
+SECRET_KEY=your-secret-key-change-in-production
+DATABASE_URL=sqlite:///mindmaps.db
+REDIS_URL=redis://localhost:6379
+MAX_CONTENT_LENGTH=16777216
+UPLOAD_FOLDER=uploads
+EXPORT_FOLDER=exports
+
+# config.py - Configuration Flask
+import os
+from datetime import timedelta
+
+class Config:
+    """Configuration de base"""
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-this'
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max
+    UPLOAD_FOLDER = 'uploads'
+    EXPORT_FOLDER = 'exports'
+    
+    # Session
+    PERMANENT_SESSION_LIFETIME = timedelta(days=7)
+    SESSION_TYPE = 'filesystem'
+    
+    # CORS
+    CORS_HEADERS = 'Content-Type'
+    
+    # SocketIO
+    SOCKETIO_ASYNC_MODE = 'eventlet'
+    
+    # Redis (pour cache et sessions)
+    REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379'
+    
+    # Celery (pour tâches asynchrones)
+    CELERY_BROKER_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379'
+    CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL') or 'redis://localhost:6379'
+
+class DevelopmentConfig(Config):
+    """Configuration développement"""
+    DEBUG = True
+    TESTING = False
+    DATABASE_URL = 'sqlite:///dev_mindmaps.db'
+
+class ProductionConfig(Config):
+    """Configuration production"""
+    DEBUG = False
+    TESTING = False
+    DATABASE_URL = os.environ.get('DATABASE_URL') or 'postgresql://user:pass@localhost/mindmaps'
+    
+    # Sécurité supplémentaire
+    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    
+class TestingConfig(Config):
+    """Configuration tests"""
+    TESTING = True
+    DATABASE_URL = 'sqlite:///:memory:'
+    WTF_CSRF_ENABLED = False
+
+# Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Installer les dépendances système
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copier les requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copier l'application
+COPY . .
+
+# Créer les dossiers nécessaires
+RUN mkdir -p uploads exports templates static
+
+# Exposer le port
+EXPOSE 5000
+
+# Commande de démarrage
+CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", "--bind", "0.0.0.0:5000", "app:app"]
+
+# docker-compose.yml
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=postgresql://mindmap:mindmap@db:5432/mindmaps
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./uploads:/app/uploads
+      - ./exports:/app/exports
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=mindmap
+      - POSTGRES_PASSWORD=mindmap
+      - POSTGRES_DB=mindmaps
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
+
+# .gitignore
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.idea/
+.vscode/
+*.sqlite
+*.db
+uploads/
+exports/
+node_modules/
+.DS_Store
+*.log

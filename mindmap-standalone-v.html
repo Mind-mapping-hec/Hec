@@ -1,0 +1,2522 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mind Map Mini - Standalone</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f3f4f6;
+            --grinde: #8b5cf6;
+            --buzan: #06b6d4;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.98);
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .mode-toggle {
+            display: flex;
+            background: var(--light);
+            padding: 4px;
+            border-radius: 8px;
+            gap: 4px;
+        }
+
+        .mode-btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            background: transparent;
+            transition: all 0.3s;
+            font-size: 13px;
+        }
+
+        .mode-btn.active {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .mode-btn.grinde.active {
+            color: var(--grinde);
+        }
+
+        .mode-btn.buzan.active {
+            color: var(--buzan);
+        }
+
+        /* Language Switcher */
+        .language-switcher {
+            display: flex;
+            background: var(--light);
+            padding: 3px;
+            border-radius: 8px;
+            gap: 2px;
+        }
+
+        .lang-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            background: transparent;
+            transition: all 0.3s;
+            font-size: 12px;
+        }
+
+        .lang-btn.active {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Toolbar */
+        .toolbar {
+            background: white;
+            padding: 0.8rem;
+            display: flex;
+            gap: 1rem;
+            border-bottom: 1px solid var(--light);
+            flex-wrap: wrap;
+        }
+
+        .tool-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: 2px solid var(--light);
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Ensure SVG icons inside buttons follow the button color and animate when active */
+        .btn svg {
+            width: 16px;
+            height: 16px;
+            display: inline-block;
+            vertical-align: middle;
+            color: inherit; /* used by stroke="currentColor" */
+            transition: color 0.15s ease, opacity 0.15s ease;
+        }
+        .btn svg path {
+            stroke: currentColor;
+            transition: stroke 0.15s ease, fill 0.15s ease;
+        }
+
+        .btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+            border-color: var(--danger);
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 120px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: white;
+            border-right: 1px solid var(--light);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s;
+        }
+
+        .sidebar.hidden {
+            transform: translateX(-100%);
+            margin-right: -280px;
+        }
+
+        .sidebar-tabs {
+            display: flex;
+            background: var(--light);
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .sidebar-tab {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: #6b7280;
+            transition: all 0.2s;
+        }
+
+        .sidebar-tab.active {
+            background: white;
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .sidebar-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .sidebar-title {
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+
+        /* Canvas */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            background: white;
+            overflow: hidden;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+            background-image: 
+                radial-gradient(circle at 1px 1px, #e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        #canvas.grabbing {
+            cursor: grabbing;
+        }
+
+        /* Properties Panel */
+        .properties-panel {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            width: 280px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 1rem;
+            display: none;
+        }
+
+        .properties-panel.active {
+            display: block;
+        }
+
+        .property-group {
+            margin-bottom: 1rem;
+        }
+
+        .property-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 4px;
+        }
+
+        .property-input {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid var(--light);
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.selected {
+            border-color: var(--dark);
+        }
+
+        /* Stats Panel */
+        .stats-panel {
+            position: absolute;
+            left: 20px;
+            bottom: 20px;
+            display: flex;
+            gap: 1.2rem;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--dark);
+            opacity: 0.7;
+            text-transform: uppercase;
+        }
+
+        /* Maps List */
+        .map-item {
+            padding: 10px;
+            margin-bottom: 6px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .map-item:hover {
+            background: var(--light);
+            border-color: var(--primary);
+        }
+
+        .map-item.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .map-item-title {
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .map-item-meta {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 90%;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--dark);
+        }
+
+        .close-btn {
+            font-size: 1.5rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: var(--dark);
+            opacity: 0.5;
+        }
+
+        .close-btn:hover {
+            opacity: 1;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            background: var(--dark);
+            color: white;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 2000;
+            animation: slideUp 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .toast.success {
+            background: var(--secondary);
+        }
+
+        .toast.error {
+            background: var(--danger);
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateX(-50%) translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Template Grid */
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .template-card {
+            padding: 12px;
+            border: 2px solid var(--light);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .template-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .template-icon {
+            font-size: 1.8rem;
+            margin-bottom: 4px;
+        }
+
+        .template-name {
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        /* Guides styling */
+        .guide-card {
+            border: 1px solid #e6e6e6;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: linear-gradient(180deg, #ffffff 0%, #fbfbfb 100%);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.04);
+        }
+
+        .guide-card-header {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:8px;
+        }
+
+        .guide-card-title {
+            display:flex;
+            gap:8px;
+            align-items:center;
+            font-weight:700;
+            color:var(--dark);
+        }
+
+        .guide-card-icon {
+            width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:18px;background:#f3f4f6;color:var(--dark);
+        }
+
+        .guide-card-body { margin-top:8px; color:#374151; font-size:13px; line-height:1.45; }
+
+        .guide-actions { margin-top:10px; display:flex; gap:8px; }
+
+        .guide-collapse { cursor:pointer; color:var(--primary); font-weight:600; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                z-index: 50;
+                height: 100%;
+            }
+            
+            .toolbar {
+                flex-wrap: wrap;
+            }
+            
+            .header-controls {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            <span>🧠</span>
+            <span data-i18n="app.title">Mind Map Mini</span>
+        </div>
+        
+        <div class="header-controls">
+                <div class="mode-toggle">
+                <button class="mode-btn buzan active" onclick="setMode('buzan')">Buzan</button>
+            </div>
+            
+            <div class="language-switcher">
+                <button class="lang-btn fr active" onclick="setLanguage('fr')">🇫🇷 FR</button>
+                <button class="lang-btn en" onclick="setLanguage('en')">🇬🇧 EN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <!-- File group -->
+        <div class="tool-group">
+            <button class="btn" onclick="newMap()">📄 <span data-i18n="btn.new">Nouveau</span></button>
+            <button class="btn" onclick="saveMap()">💾 <span data-i18n="btn.save">Sauvegarder</span></button>
+            <button class="btn" onclick="loadMapDialog()">📂 <span data-i18n="btn.open">Ouvrir</span></button>
+            <button class="btn" onclick="exportMap('json')">📤 <span data-i18n="btn.export">Export</span></button>
+            <button class="btn" onclick="clearCanvas()">🗑️ <span data-i18n="btn.clear">Effacer</span></button>
+        </div>
+
+        <!-- Edit group -->
+            <div class="tool-group">
+            <button class="btn" onclick="setTool('select')">👆 <span data-i18n="tool.select">Select</span></button>
+            <button class="btn" onclick="setTool('connect')" title="Connect" aria-label="Connect tool">
+                <!-- small link icon SVG as logo -->
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                    <path d="M10.59 13.41a1 1 0 011.41 0l1.59 1.59a3 3 0 004.24 0 3 3 0 000-4.24l-2-2a3 3 0 00-4.24 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M13.41 10.59a1 1 0 00-1.41 0L10.41 12.59a3 3 0 01-4.24 0 3 3 0 010-4.24l2-2a3 3 0 014.24 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span style="margin-left:6px" data-i18n="tool.connect">Connecter</span>
+            </button>
+            <button class="btn" onclick="setTool('delete')">❌ <span data-i18n="tool.delete">Supprimer</span></button>
+        </div>
+
+        <!-- Draw group -->
+        <div class="tool-group">
+            <button class="btn" onclick="showQuickAddForType('central')">⭐ <span data-i18n="node.central">Central</span></button>
+            <button class="btn" onclick="showQuickAddForType('group')">📦 <span data-i18n="node.group">Groupe</span></button>
+            <button class="btn" onclick="showQuickAddForType('concept')">💡 <span data-i18n="node.concept">Concept</span></button>
+            <button class="btn" onclick="showQuickAddForType('detail')">📝 <span data-i18n="node.detail">Détail</span></button>
+        </div>
+
+        <div class="tool-group" style="margin-left:auto;">
+            <button class="btn" onclick="zoomIn()">🔍+</button>
+            <button class="btn" onclick="zoomOut()">🔍-</button>
+            <button class="btn" onclick="resetView()">🔄</button>
+            <button class="btn" onclick="toggleSidebar()">📊</button>
+            <label style="display:flex; align-items:center; gap:6px; margin-left:8px;">
+                <input type="checkbox" id="autosaveToggle" onchange="toggleAutosave(this.checked)" checked>
+                <span style="font-size:12px;" data-i18n="toolbar.autosave">AutoSave</span>
+            </label>
+        </div>
+    </div>
+
+    <!-- left toolbox removed -->
+
+    <!-- Quick-add floating form -->
+    <div id="quickAdd" style="position:fixed; left:50%; top:120px; transform:translateX(-50%); z-index:900; display:none;">
+        <div style="background:white; padding:10px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.1); display:flex; gap:8px; align-items:center;">
+            <input id="quickAddText" placeholder="Node text" style="padding:6px; border:1px solid var(--light); border-radius:6px; min-width:220px;" />
+            <button class="btn btn-primary" onclick="addNodeFromQuickAdd()" id="quickAddOk">Add</button>
+            <button class="btn" onclick="hideQuickAdd()" id="quickAddCancel">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-tabs">
+                <button class="sidebar-tab active" onclick="showSidebarTab('maps')">
+                    <span data-i18n="sidebar.maps">Mes Cartes</span>
+                </button>
+                <button class="sidebar-tab" onclick="showSidebarTab('templates')">
+                    <span data-i18n="sidebar.templates">Modèles</span>
+                </button>
+                <button class="sidebar-tab" onclick="showSidebarTab('help')">
+                    <span data-i18n="sidebar.help">Aide</span>
+                </button>
+                <button class="sidebar-tab" onclick="showSidebarTab('guides')">
+                    <span data-i18n="sidebar.guides">Guides</span>
+                </button>
+            </div>
+            
+            <div class="sidebar-content">
+                <!-- Maps Tab -->
+                <div id="maps-tab" class="sidebar-pane">
+                    <div class="sidebar-section">
+                        <div class="sidebar-title" data-i18n="sidebar.recent">Cartes Récentes</div>
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                                <input type="checkbox" id="selectAllMaps" onchange="toggleSelectAll(this.checked)">
+                                <label for="selectAllMaps"><span data-i18n="maps.select_all">Tout sélectionner</span></label>
+                                <button id="deleteSelectedBtn" class="btn" style="margin-left:auto; padding:4px 8px;" onclick="deleteSelectedSavedMaps()" data-i18n="maps.delete_selected">Supprimer sélection</button>
+                            </div>
+                            <div id="mapsList"></div>
+                    </div>
+                </div>
+                
+                <!-- Templates Tab -->
+                <div id="templates-tab" class="sidebar-pane" style="display: none;">
+                    <div class="sidebar-section">
+                        <div class="sidebar-title" data-i18n="sidebar.templates">Modèles</div>
+                        <div class="template-grid">
+                            <div class="template-card" onclick="loadTemplate('business-plan')">
+                                <div class="template-icon">📊</div>
+                                <div class="template-name" data-i18n="template.business">Business Plan</div>
+                            </div>
+                            <div class="template-card" onclick="loadTemplate('study-notes')">
+                                <div class="template-icon">📚</div>
+                                <div class="template-name" data-i18n="template.study">Notes</div>
+                            </div>
+                            <div class="template-card" onclick="loadTemplate('project')">
+                                <div class="template-icon">💼</div>
+                                <div class="template-name" data-i18n="template.project">Projet</div>
+                            </div>
+                            <div class="template-card" onclick="loadTemplate('brainstorm')">
+                                <div class="template-icon">🧠</div>
+                                <div class="template-name" data-i18n="template.brainstorm">Brainstorm</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Help Tab -->
+                <div id="help-tab" class="sidebar-pane" style="display: none;">
+                    <div class="sidebar-section">
+                        <div class="sidebar-title" data-i18n="help.title">Aide Rapide</div>
+                        <div id="jobAid" style="font-size: 13px; line-height: 1.6;">
+                            <!-- Job aid content populated by setLanguage() -->
+                        </div>
+                        <div style="margin-top:12px;">
+                            <div class="sidebar-title">Quick Tips</div>
+                            <ul style="font-size:13px; margin-left:16px;">
+                                <li>Use the select tool to move nodes. Drag to reposition.</li>
+                                <li>Use the connect tool to draw links between nodes.</li>
+                                <li>Rectangle nodes remain horizontally aligned while resizing; use the Rotation slider to rotate.</li>
+                                <li>Autosave can be toggled in the toolbar.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guides Tab -->
+                <div id="guides-tab" class="sidebar-pane" style="display: none;">
+                    <div class="sidebar-section">
+                        <div class="sidebar-title" data-i18n="guides.title">Guides et Méthodes</div>
+
+                        <div class="guide-card" id="guide-buzan">
+                            <div class="guide-card-header">
+                                <div class="guide-card-title"><div class="guide-card-icon">🧠</div><div><div data-i18n="guides.buzan.title">Méthode BUZAN</div><div style="font-size:12px; color:#6b7280;">Apprenez la pensée visuelle</div></div></div>
+                                <div class="guide-collapse" onclick="toggleGuide('buzan')">Voir</div>
+                            </div>
+                            <div class="guide-card-body" id="guide-buzan-body" style="display:none;">
+                                <p data-i18n="guides.buzan.p1">La méthode Buzan met l'accent sur les associations visuelles, les couleurs, et la hiérarchie. Utilisez des branches colorées et des images pour stimuler la mémoire.</p>
+                                <p data-i18n="guides.buzan.p2">Conseils rapides : commencez par un sujet central, développez des branches principales, utilisez des mots-clés courts et des icônes.</p>
+                                <div class="guide-actions"><button class="btn" onclick="openGuide()">Lire le guide complet</button></div>
+                            </div>
+                        </div>
+
+                        <div class="guide-card" id="guide-business">
+                            <div class="guide-card-header">
+                                <div class="guide-card-title"><div class="guide-card-icon">📈</div><div><div data-i18n="guides.business.title">Business Analysis</div><div style="font-size:12px; color:#6b7280;">Cartographier processus & risques</div></div></div>
+                                <div class="guide-collapse" onclick="toggleGuide('business')">Voir</div>
+                            </div>
+                            <div class="guide-card-body" id="guide-business-body" style="display:none;">
+                                <p data-i18n="guides.business.p1">Utilisez le mind mapping pour cartographier les parties prenantes, les processus clés, les risques et les opportunités. Structurez par thèmes (Ex: Finance, Produit, Clients).</p>
+                                <p data-i18n="guides.business.p2">Méthode : identifiez l'objectif, capturez les hypothèses, mappez les dépendances, priorisez les actions.</p>
+                                <div class="guide-actions"><button class="btn" onclick="loadTemplate('business-plan')">Charger le template Business</button></div>
+                            </div>
+                        </div>
+
+                        <div class="guide-card" id="guide-study">
+                            <div class="guide-card-header">
+                                <div class="guide-card-title"><div class="guide-card-icon">📚</div><div><div data-i18n="guides.study.title">Study Template & Build Your Own</div><div style="font-size:12px; color:#6b7280;">Étudier ou construire</div></div></div>
+                                <div class="guide-collapse" onclick="toggleGuide('study')">Voir</div>
+                            </div>
+                            <div class="guide-card-body" id="guide-study-body" style="display:none;">
+                                <p data-i18n="guides.study.p1">Choix rapide : chargez le modèle 'Study Notes' pour une structure d'étude prête à l'emploi, ou créez votre propre carte vide.</p>
+                                <p data-i18n="guides.study.p2">Astuce : ajoutez une racine, puis des enfants, utilisez des couleurs pour les thèmes, et ajoutez des étiquettes aux connexions pour clarifier les relations.</p>
+                                <div class="guide-actions">
+                                    <button class="btn" onclick="loadTemplate('study-notes')">Charger Study Notes</button>
+                                    <button class="btn" onclick="newMap(); closeProperties();">Créer une carte vide</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="guide-card">
+                            <div class="guide-card-header">
+                                <div class="guide-card-title"><div class="guide-card-icon">⚡</div><div><div data-i18n="guides.quicktips">Quick Tips</div></div></div>
+                                <div></div>
+                            </div>
+                            <div class="guide-card-body">
+                                <ul style="margin-left:16px;">
+                                    <li data-i18n="guides.tip.1">Utilisez des couleurs cohérentes par thème.</li>
+                                    <li data-i18n="guides.tip.2">Gardez des mots-clés courts pour une lecture rapide.</li>
+                                    <li data-i18n="guides.tip.3">Annoter les connexions pour expliquer le type de relation.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas -->
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+            
+            <!-- Properties Panel -->
+            <div class="properties-panel" id="propertiesPanel">
+                    <div class="property-group">
+                        <div class="property-label" data-i18n="property.text">Texte</div>
+                        <input type="text" class="property-input" id="nodeText" onchange="updateNodeProperty('text')">
+                    </div>
+
+                    <div class="property-group">
+                        <div class="property-label">Text Size</div>
+                        <input type="number" class="property-input" id="nodeTextSize" min="8" max="72" onchange="updateNodeProperty('textSize')">
+                    </div>
+
+                    <div class="property-group">
+                        <div class="property-label" data-i18n="property.size">Taille</div>
+                        <input type="range" class="property-input" id="nodeSize" min="10" max="80" onchange="updateNodeProperty('size')">
+                    </div>
+
+                    <div class="property-group">
+                        <div class="property-label">Text Color</div>
+                        <input type="color" class="property-input" id="nodeTextColor" onchange="updateNodeProperty('textColor')">
+                    </div>
+
+                    <div class="property-group">
+                        <div class="property-label" data-i18n="property.color">Couleur</div>
+                        <input type="color" class="property-input" id="nodeColor" onchange="updateNodeProperty('color')">
+                    </div>
+
+                    <div class="property-group">
+                        <div class="property-label">Shape</div>
+                        <select id="nodeShape" class="property-input" onchange="updateNodeProperty('shape')">
+                            <option value="rounded">Rounded</option>
+                            <option value="rect">Rectangle</option>
+                            <option value="circle">Circle</option>
+                        </select>
+                    </div>
+
+                    <div class="property-group">
+                        <div class="property-label" data-i18n="prop.corner_radius">Rayon coins (arrondi)</div>
+                        <input type="range" class="property-input" id="nodeCornerRadius" min="0" max="40" onchange="updateNodeProperty('cornerRadius')">
+                    </div>
+
+                    <div class="property-group">
+                        <div class="property-label">Rotation (°)</div>
+                        <input type="range" class="property-input" id="nodeRotation" min="0" max="360" onchange="updateNodeProperty('rotation')">
+                    </div>
+
+                    <div class="property-group">
+                        <div class="property-label">Preview</div>
+                        <canvas id="propPreview" width="240" height="80" style="border:1px solid #eee; border-radius:6px;"></canvas>
+                    </div>
+
+                    <div style="display:flex; gap:8px; margin-top:8px;">
+                        <button id="propSaveBtn" class="btn btn-primary" style="flex:1" onclick="saveProperties()">Save</button>
+                        <button id="propCancelBtn" class="btn" style="flex:1" onclick="cancelProperties()">Cancel</button>
+                    </div>
+            </div>
+            
+            <!-- Arrow Properties Panel -->
+            <div class="properties-panel" id="arrowPropertiesPanel" style="right:320px;">
+                <div class="property-group">
+                    <div class="property-label">Arrow ID</div>
+                    <input type="text" class="property-input" id="arrowId" readonly>
+                </div>
+                <div class="property-group">
+                    <div class="property-label">Label</div>
+                    <input type="text" class="property-input" id="arrowText">
+                </div>
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                    <button class="btn btn-primary" style="flex:1" onclick="saveArrowProperties()">Save</button>
+                    <button class="btn" style="flex:1" onclick="cancelArrowProperties()">Cancel</button>
+                </div>
+            </div>
+            
+            <!-- Stats Panel -->
+            <div class="stats-panel">
+                <div class="stat">
+                    <div class="stat-value" id="nodeCount">0</div>
+                    <div class="stat-label" data-i18n="stat.nodes">Nœuds</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="connectionCount">0</div>
+                    <div class="stat-label" data-i18n="stat.links">Liens</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="currentMode">GRINDE</div>
+                    <div class="stat-label" data-i18n="stat.mode">Mode</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Map Modal -->
+    <div class="modal" id="loadModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" data-i18n="modal.load">Charger une carte</h2>
+                <button class="close-btn" onclick="closeModal('loadModal')">&times;</button>
+            </div>
+            <div id="loadMapsList"></div>
+        </div>
+    </div>
+
+    <!-- Guide Modal -->
+    <div class="modal" id="guideModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Guide</h2>
+                <button class="close-btn" onclick="closeModal('guideModal')">&times;</button>
+            </div>
+            <div style="font-size:13px; line-height:1.6;">
+                <h3>Quick Start</h3>
+                <ol>
+                    <li>Create nodes with the toolbar or double-click.</li>
+                    <li>Select a node to edit its properties (size, color, rotation).</li>
+                    <li>Use Connect to create links; Delete tool removes nodes.</li>
+                </ol>
+                <h3>Tips</h3>
+                <ul>
+                    <li>Rectangles stay horizontal when resized. Use rotation to tilt them.</li>
+                    <li>Autosave is enabled by default; disable if you prefer manual saves.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===============================
+        // Internationalization (i18n)
+        // ===============================
+        const i18n = {
+            fr: {
+                'app.title': 'Mind Map Mini',
+                'btn.new': 'Nouveau',
+                'btn.save': 'Sauvegarder',
+                'btn.open': 'Ouvrir',
+                'btn.export': 'Export',
+                'btn.clear': 'Effacer',
+                'btn.close': 'Fermer',
+                'node.central': 'Central',
+                'node.group': 'Groupe',
+                'node.concept': 'Concept',
+                'node.detail': 'Détail',
+                'tool.select': 'Select',
+                'tool.connect': 'Connecter',
+                'tool.delete': 'Supprimer',
+                'sidebar.maps': 'Mes Cartes',
+                'sidebar.templates': 'Modèles',
+                'sidebar.help': 'Aide',
+                'sidebar.recent': 'Cartes Récentes',
+                'template.business': 'Business Plan',
+                'template.study': 'Notes',
+                'template.project': 'Projet',
+                'template.brainstorm': 'Brainstorm',
+                'property.text': 'Texte',
+                'property.size': 'Taille',
+                'property.color': 'Couleur',
+                'stat.nodes': 'Nœuds',
+                'stat.links': 'Liens',
+                'stat.mode': 'Mode',
+                'help.title': 'Aide Rapide',
+                'modal.load': 'Charger une carte',
+                'prompt.node.text': 'Entrez le texte du nœud :',
+                'prompt.map.title': 'Titre de la carte :',
+                'toast.saved': 'Carte sauvegardée !',
+                'toast.loaded': 'Carte chargée !',
+                'toast.exported': 'Carte exportée !',
+                'toast.deleted': 'Supprimé !',
+                'confirm.new': 'Créer une nouvelle carte ? Les modifications non sauvegardées seront perdues.',
+                'confirm.delete': 'Supprimer ce nœud ?'
+                ,
+                'jobaid.title': 'Guide d\'utilisation',
+                'jobaid.lines': [
+                    'Changer la Langue',
+                    'Cliquez sur 🇫🇷 FR ou 🇬🇧 EN dans l\'en-tête',
+                    'L\'interface se met à jour instantanément',
+                    'La préférence est sauvegardée',
+                    '',
+                    'Créer une Carte avec Template',
+                    'Cliquez sur l\'onglet Modèles dans la sidebar',
+                    'Choisissez un template (ex: Plan d\'Affaires)',
+                    'Le template se charge avec la structure prédéfinie',
+                    'Modifiez selon vos besoins',
+                    '',
+                    'Voir le Score GRINDE',
+                    'Créez votre carte en mode GRINDE',
+                    'Le score s\'affiche automatiquement dans les exports',
+                    'Visez 80+ pour une carte optimale !'
+                ]
+                ,
+                'maps.select_all': 'Tout sélectionner',
+                'maps.delete_selected': 'Supprimer sélection',
+                'confirm.delete_selected': 'Supprimer les cartes sélectionnées ?'
+                ,
+                'prop.text': 'Texte',
+                'prop.text_size': 'Taille du texte',
+                'prop.node_size': 'Taille du nœud',
+                'prop.text_color': 'Couleur du texte',
+                'prop.fill_color': 'Couleur',
+                'prop.shape': 'Forme',
+                'prop.save': 'Enregistrer',
+                'prop.cancel': 'Annuler',
+                'prop.corner_radius': 'Rayon coins (arrondi)'
+            },
+            en: {
+                'app.title': 'Mind Map Mini',
+                'btn.new': 'New',
+                'btn.save': 'Save',
+                'btn.open': 'Open',
+                'btn.export': 'Export',
+                'btn.clear': 'Clear',
+                'btn.close': 'Close',
+                'node.central': 'Central',
+                'node.group': 'Group',
+                'node.concept': 'Concept',
+                'node.detail': 'Detail',
+                'tool.select': 'Select',
+                'tool.connect': 'Connect',
+                'tool.delete': 'Delete',
+                'sidebar.maps': 'My Maps',
+                'sidebar.templates': 'Templates',
+                'sidebar.help': 'Help',
+                'sidebar.recent': 'Recent Maps',
+                'template.business': 'Business Plan',
+                'template.study': 'Notes',
+                'template.project': 'Project',
+                'template.brainstorm': 'Brainstorm',
+                'property.text': 'Text',
+                'property.size': 'Size',
+                'property.color': 'Color',
+                'stat.nodes': 'Nodes',
+                'stat.links': 'Links',
+                'stat.mode': 'Mode',
+                'help.title': 'Quick Help',
+                'modal.load': 'Load a map',
+                'prompt.node.text': 'Enter node text:',
+                'prompt.map.title': 'Map title:',
+                'toast.saved': 'Map saved!',
+                'toast.loaded': 'Map loaded!',
+                'toast.exported': 'Map exported!',
+                'toast.deleted': 'Deleted!',
+                'confirm.new': 'Create new map? Unsaved changes will be lost.',
+                'confirm.delete': 'Delete this node?'
+                ,
+                'jobaid.title': 'User Guide',
+                'jobaid.lines': [
+                    'Change Language',
+                    'Click 🇫🇷 FR or 🇬🇧 EN in the header',
+                    'The interface updates instantly',
+                    'Preference is saved',
+                    '',
+                    'Create a Map from a Template',
+                    'Click the Templates tab in the sidebar',
+                    'Choose a template (e.g. Business Plan)',
+                    'The template loads with a predefined structure',
+                    'Edit it to fit your needs',
+                    '',
+                    'See the GRINDE Score',
+                    'Create your map in GRINDE mode',
+                    'The score is automatically included in exports',
+                    'Aim for 80+ for an optimal map!'
+                ]
+                ,
+                'maps.select_all': 'Select all',
+                'maps.delete_selected': 'Delete selected',
+                'confirm.delete_selected': 'Delete selected maps?'
+                ,
+                'prop.text': 'Text',
+                'prop.text_size': 'Text size',
+                'prop.node_size': 'Node size',
+                'prop.text_color': 'Text color',
+                'prop.fill_color': 'Fill color',
+                'prop.shape': 'Shape',
+                'prop.save': 'Save',
+                'prop.cancel': 'Cancel',
+                'prop.corner_radius': 'Corner radius (rounded)'
+            }
+        };
+
+    // toolbox removed
+
+        // Add Guides strings for both languages
+        i18n.fr['sidebar.guides'] = 'Guides';
+        i18n.fr['guides.title'] = 'Guides et Méthodes';
+        i18n.fr['guides.buzan.title'] = 'Méthode BUZAN';
+        i18n.fr['guides.buzan.p1'] = "La méthode Buzan met l'accent sur les associations visuelles, les couleurs, et la hiérarchie. Utilisez des branches colorées et des images pour stimuler la mémoire.";
+        i18n.fr['guides.buzan.p2'] = "Conseils rapides : commencez par un sujet central, développez des branches principales, utilisez des mots-clés courts et des icônes.";
+        i18n.fr['guides.business.title'] = 'Business Analysis';
+        i18n.fr['guides.business.p1'] = "Utilisez le mind mapping pour cartographier les parties prenantes, les processus clés, les risques et les opportunités.";
+        i18n.fr['guides.business.p2'] = "Méthode : identifiez l'objectif, capturez les hypothèses, mappez les dépendances, priorisez les actions.";
+        i18n.fr['guides.study.title'] = 'Study & Build';
+        i18n.fr['guides.study.p1'] = 'Choix rapide : chargez le modèle Study Notes ou créez votre propre carte vide.';
+        i18n.fr['guides.study.p2'] = 'Astuce : ajoutez racine → enfants → thèmes, utilisez des couleurs.';
+        i18n.fr['guides.quicktips'] = 'Conseils rapides';
+        i18n.fr['guides.tip.1'] = 'Utilisez des couleurs cohérentes par thème.';
+        i18n.fr['guides.tip.2'] = 'Gardez des mots-clés courts pour une lecture rapide.';
+        i18n.fr['guides.tip.3'] = 'Annoter les connexions pour expliquer le type de relation.';
+
+        i18n.en['sidebar.guides'] = 'Guides';
+        i18n.en['guides.title'] = 'Guides & Methods';
+        i18n.en['guides.buzan.title'] = 'BUZAN Method';
+        i18n.en['guides.buzan.p1'] = 'The Buzan method focuses on visual associations, colors, and hierarchy. Use colored branches and images to boost memory.';
+        i18n.en['guides.buzan.p2'] = 'Quick tips: start with a central topic, develop main branches, use short keywords and icons.';
+        i18n.en['guides.business.title'] = 'Business Analysis';
+        i18n.en['guides.business.p1'] = 'Use mind mapping to map stakeholders, key processes, risks and opportunities.';
+        i18n.en['guides.business.p2'] = 'Method: identify objective, capture assumptions, map dependencies, prioritize actions.';
+        i18n.en['guides.study.title'] = 'Study & Build';
+        i18n.en['guides.study.p1'] = "Quick choice: load the 'Study Notes' template or create your own blank map.";
+        i18n.en['guides.study.p2'] = 'Tip: add root → children → themes, use colors.';
+        i18n.en['guides.quicktips'] = 'Quick Tips';
+        i18n.en['guides.tip.1'] = 'Use consistent colors per theme.';
+        i18n.en['guides.tip.2'] = 'Keep keywords short for quick scanning.';
+        i18n.en['guides.tip.3'] = 'Label connections to clarify relationship types.';
+
+        // ===============================
+        // Global State
+        // ===============================
+        let currentLanguage = localStorage.getItem('language') || 'fr';
+        let currentMap = {
+            id: null,
+            title: 'Mind Map',
+            mode: 'buzan',
+            nodes: [],
+            connections: [],
+            created: new Date().toISOString(),
+            modified: new Date().toISOString()
+        };
+        
+        let selectedNode = null;
+    let editingNode = null; // temporary buffer for properties panel
+        let selectedConnection = null;
+        let currentTool = 'select';
+        let isDragging = false;
+        let isConnecting = false;
+        let connectStart = null;
+        let dragOffset = { x: 0, y: 0 };
+        let panOffset = { x: 0, y: 0 };
+        let zoom = 1;
+        let canvas, ctx;
+    // Undo/redo history (stores serialized map states)
+    let history = [];
+    let historyIndex = -1;
+    let autosaveEnabled = true;
+
+        // ===============================
+        // Node Class
+        // ===============================
+        class Node {
+            constructor(x, y, text, type = 'concept') {
+                this.id = 'node_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                this.x = x;
+                this.y = y;
+                this.text = text;
+                this.type = type;
+                this.size = this.getDefaultSize();
+                this.color = this.getDefaultColor();
+                // new properties
+                this.textSize = Math.round(this.size * 0.7);
+                this.textColor = this.type === 'detail' ? '#1f2937' : '#ffffff';
+                this.shape = 'rounded'; // 'rounded' | 'rect' | 'circle'
+                this.cornerRadius = 8;
+                this.rotation = 0; // degrees
+            }
+            
+            getDefaultSize() {
+                const sizes = {
+                    'central': 30,
+                    'group': 25,
+                    'concept': 20,
+                    'detail': 15
+                };
+                return sizes[this.type] || 20;
+            }
+            
+            getDefaultColor() {
+                const colors = {
+                    'central': '#6366f1',
+                    'group': '#f59e0b',
+                    'concept': '#10b981',
+                    'detail': '#9ca3af'
+                };
+                return colors[this.type] || '#6366f1';
+            }
+            
+            draw(ctx) {
+                ctx.save();
+                
+                // Shadow
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+                ctx.shadowBlur = 5;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+                
+                // Draw node shape
+                ctx.fillStyle = this.color;
+                ctx.strokeStyle = selectedNode === this ? '#1f2937' : '#ffffff';
+                ctx.lineWidth = selectedNode === this ? 3 : 2;
+
+                const width = Math.max(this.text.length * 7 + 20, 80);
+                const height = this.size * 2;
+
+                if (this.shape === 'circle') {
+                    ctx.beginPath();
+                    const radius = Math.max(this.size, width/2);
+                    ctx.arc(this.x, this.y, radius, 0, Math.PI * 2);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                } else if (this.shape === 'rect' || this.shape === 'rounded') {
+                    // Keep rectangle oriented horizontally: apply rotation only for circle/rounded? user requested keep horizontal when sizing and allow rotation — we'll apply rotation only for circle/rounded by default, but allow manual rotation for rect via property
+                    ctx.save();
+                    // translate to center and rotate around center
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate((this.rotation || 0) * Math.PI / 180);
+                    if (this.shape === 'rect') {
+                        ctx.fillRect(-width/2, -height/2, width, height);
+                        ctx.strokeRect(-width/2, -height/2, width, height);
+                    } else {
+                        const radius = this.cornerRadius || 8;
+                        ctx.beginPath();
+                        ctx.moveTo(-width/2 + radius, -height/2);
+                        ctx.lineTo(width/2 - radius, -height/2);
+                        ctx.quadraticCurveTo(width/2, -height/2, width/2, -height/2 + radius);
+                        ctx.lineTo(width/2, height/2 - radius);
+                        ctx.quadraticCurveTo(width/2, height/2, width/2 - radius, height/2);
+                        ctx.lineTo(-width/2 + radius, height/2);
+                        ctx.quadraticCurveTo(-width/2, height/2, -width/2, height/2 - radius);
+                        ctx.lineTo(-width/2, -height/2 + radius);
+                        ctx.quadraticCurveTo(-width/2, -height/2, -width/2 + radius, -height/2);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                } else {
+                    // circle
+                    ctx.beginPath();
+                    const radius = Math.max(this.size, width/2);
+                    ctx.arc(this.x, this.y, radius, 0, Math.PI * 2);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+
+                // Text
+                ctx.fillStyle = this.textColor || (this.type === 'detail' ? '#1f2937' : '#ffffff');
+                const fontSize = this.textSize || Math.round(this.size * 0.7);
+                ctx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.text, this.x, this.y);
+                
+                ctx.restore();
+            }
+            
+            isPointInside(x, y) {
+                const width = Math.max(this.text.length * 7 + 20, 80);
+                const height = this.size * 2;
+                return x >= this.x - width/2 && x <= this.x + width/2 &&
+                       y >= this.y - height/2 && y <= this.y + height/2;
+            }
+        }
+
+        // ===============================
+        // Connection Class
+        // ===============================
+        class Connection {
+            constructor(source, target, type = 'simple') {
+                this.id = 'conn_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                this.source = source;
+                this.target = target;
+                this.type = type;
+                this.color = '#6366f1';
+                this.text = '';
+            }
+            
+            draw(ctx) {
+                ctx.save();
+
+                // Highlight when selected
+                ctx.strokeStyle = (typeof selectedConnection !== 'undefined' && selectedConnection === this) ? '#ef4444' : this.color;
+                ctx.lineWidth = (typeof selectedConnection !== 'undefined' && selectedConnection === this) ? 4 : 2;
+                
+                let drewCurve = false;
+                if (currentMap.mode === 'grinde' || this.type === 'curved') {
+                    // Curved connection (GRINDE default or explicit curved type)
+                    ctx.beginPath();
+                    ctx.moveTo(this.source.x, this.source.y);
+                    const cp1x = (this.source.x + this.target.x) / 2;
+                    const cp1y = this.source.y;
+                    const cp2x = (this.source.x + this.target.x) / 2;
+                    const cp2y = this.target.y;
+                    ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, this.target.x, this.target.y);
+                    ctx.stroke();
+                    drewCurve = true;
+                }
+
+                if (!drewCurve) {
+                    // Straight connection for Buzan / default
+                    ctx.beginPath();
+                    ctx.moveTo(this.source.x, this.source.y);
+                    ctx.lineTo(this.target.x, this.target.y);
+                    ctx.stroke();
+                }
+                
+                // Arrow if needed
+                if (this.type === 'arrow') {
+                    let angle;
+                    if (drewCurve) {
+                        // approximate tangent at end of bezier using last control point
+                        const cp2x = (this.source.x + this.target.x) / 2;
+                        const cp2y = this.target.y;
+                        const dx = this.target.x - cp2x;
+                        const dy = this.target.y - cp2y;
+                        angle = Math.atan2(dy, dx);
+                    } else {
+                        angle = Math.atan2(this.target.y - this.source.y, this.target.x - this.source.x);
+                    }
+                    const arrowLength = 12;
+                    const arrowAngle = Math.PI / 6;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(this.target.x, this.target.y);
+                    ctx.lineTo(
+                        this.target.x - arrowLength * Math.cos(angle - arrowAngle),
+                        this.target.y - arrowLength * Math.sin(angle - arrowAngle)
+                    );
+                    ctx.moveTo(this.target.x, this.target.y);
+                    ctx.lineTo(
+                        this.target.x - arrowLength * Math.cos(angle + arrowAngle),
+                        this.target.y - arrowLength * Math.sin(angle + arrowAngle)
+                    );
+                    ctx.stroke();
+                }
+                // Draw connection text/label if present
+                if (this.text) {
+                    ctx.save();
+                    ctx.fillStyle = '#111';
+                    ctx.font = '14px -apple-system, BlinkMacSystemFont, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+
+                    let tx = (this.source.x + this.target.x) / 2;
+                    let ty = (this.source.y + this.target.y) / 2;
+                    if (currentMap.mode === 'grinde') {
+                        // compute point on bezier at t=0.5 using same control points
+                        const x1 = this.source.x, y1 = this.source.y;
+                        const x4 = this.target.x, y4 = this.target.y;
+                        const x2 = (x1 + x4) / 2, y2 = y1;
+                        const x3 = (x1 + x4) / 2, y3 = y4;
+                        const t = 0.5;
+                        const cx = Math.pow(1 - t, 3) * x1 + 3 * Math.pow(1 - t, 2) * t * x2 + 3 * (1 - t) * Math.pow(t, 2) * x3 + Math.pow(t, 3) * x4;
+                        const cy = Math.pow(1 - t, 3) * y1 + 3 * Math.pow(1 - t, 2) * t * y2 + 3 * (1 - t) * Math.pow(t, 2) * y3 + Math.pow(t, 3) * y4;
+                        tx = cx; ty = cy;
+                    }
+
+                    // background box for readability
+                    const padding = 6;
+                    const textWidth = ctx.measureText(this.text).width;
+                    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+                    ctx.fillRect(tx - textWidth/2 - padding, ty - 12, textWidth + padding*2, 24);
+                    ctx.fillStyle = '#111';
+                    ctx.fillText(this.text, tx, ty);
+                    ctx.restore();
+                }
+                
+                ctx.restore();
+            }
+        }
+
+        // ===============================
+        // Connection hit-testing helpers
+        // ===============================
+        function distancePointToSegment(px, py, x1, y1, x2, y2) {
+            const A = px - x1;
+            const B = py - y1;
+            const C = x2 - x1;
+            const D = y2 - y1;
+
+            const dot = A * C + B * D;
+            const len_sq = C * C + D * D;
+            let param = -1;
+            if (len_sq !== 0) param = dot / len_sq;
+
+            let xx, yy;
+
+            if (param < 0) {
+                xx = x1;
+                yy = y1;
+            } else if (param > 1) {
+                xx = x2;
+                yy = y2;
+            } else {
+                xx = x1 + param * C;
+                yy = y1 + param * D;
+            }
+
+            const dx = px - xx;
+            const dy = py - yy;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function isPointNearConnection(conn, px, py, threshold = 8) {
+            if (!conn || !conn.source || !conn.target) return false;
+            if (currentMap.mode === 'grinde') {
+                // cubic bezier using same control points as draw
+                const x1 = conn.source.x, y1 = conn.source.y;
+                const x4 = conn.target.x, y4 = conn.target.y;
+                const x2 = (x1 + x4) / 2, y2 = y1;
+                const x3 = (x1 + x4) / 2, y3 = y4;
+
+                // sample points along bezier and check distance to segments
+                const samples = 20;
+                let prevX = x1, prevY = y1;
+                for (let i = 1; i <= samples; i++) {
+                    const t = i / samples;
+                    // cubic bezier formula
+                    const cx = Math.pow(1 - t, 3) * x1 + 3 * Math.pow(1 - t, 2) * t * x2 + 3 * (1 - t) * Math.pow(t, 2) * x3 + Math.pow(t, 3) * x4;
+                    const cy = Math.pow(1 - t, 3) * y1 + 3 * Math.pow(1 - t, 2) * t * y2 + 3 * (1 - t) * Math.pow(t, 2) * y3 + Math.pow(t, 3) * y4;
+                    const dist = distancePointToSegment(px, py, prevX, prevY, cx, cy);
+                    if (dist <= threshold) return true;
+                    prevX = cx; prevY = cy;
+                }
+                return false;
+            } else {
+                // straight line
+                return distancePointToSegment(px, py, conn.source.x, conn.source.y, conn.target.x, conn.target.y) <= threshold;
+            }
+        }
+
+        // ===============================
+        // Templates
+        // ===============================
+        const templates = {
+            'business-plan': {
+                title: 'Business Plan',
+                mode: 'buzan',
+                nodes: [
+                    {text: '📊 Business Plan', type: 'central', x: 400, y: 300},
+                    {text: '💼 Vision', type: 'group', x: 200, y: 150},
+                    {text: '🎯 Market', type: 'group', x: 600, y: 150},
+                    {text: '📦 Product', type: 'group', x: 200, y: 450},
+                    {text: '💰 Finance', type: 'group', x: 600, y: 450}
+                ]
+            },
+            'study-notes': {
+                title: 'Study Notes',
+                mode: 'buzan',
+                nodes: [
+                    {text: '📚 Course', type: 'central', x: 400, y: 300},
+                    {text: '🔑 Key Concepts', type: 'group', x: 250, y: 200},
+                    {text: '💡 Examples', type: 'group', x: 550, y: 200},
+                    {text: '❓ Questions', type: 'group', x: 250, y: 400},
+                    {text: '⚡ Remember', type: 'group', x: 550, y: 400}
+                ]
+            },
+            'project': {
+                title: 'Project',
+                mode: 'buzan',
+                nodes: [
+                    {text: '💼 Project', type: 'central', x: 400, y: 300},
+                    {text: '🎯 Goals', type: 'group', x: 200, y: 200},
+                    {text: '👥 Team', type: 'group', x: 600, y: 200},
+                    {text: '📋 Tasks', type: 'group', x: 200, y: 400},
+                    {text: '📅 Timeline', type: 'group', x: 600, y: 400}
+                ]
+            },
+            'brainstorm': {
+                title: 'Brainstorm',
+                mode: 'buzan',
+                nodes: [
+                    {text: '💡 Main Idea', type: 'central', x: 400, y: 300}
+                ]
+            }
+        };
+
+        // ===============================
+        // Initialize
+        // ===============================
+        function init() {
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+            
+            setLanguage(currentLanguage);
+            
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Event listeners
+            canvas.addEventListener('dblclick', handleDoubleClick);
+            canvas.addEventListener('mousedown', handleMouseDown);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseup', handleMouseUp);
+            canvas.addEventListener('wheel', handleWheel);
+            document.addEventListener('keydown', handleKeyDown);
+
+            // keyboard undo/redo
+            document.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
+                if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { e.preventDefault(); redo(); }
+            });
+            
+            // Load saved maps
+            loadMapsList();
+            
+            // Start with new map
+            newMap();
+
+            // wire quick add Enter key
+            const qa = document.getElementById('quickAddText');
+            if (qa) {
+                qa.addEventListener('keydown', (ev) => {
+                    if (ev.key === 'Enter') addNodeFromQuickAdd();
+                    if (ev.key === 'Escape') hideQuickAdd();
+                });
+            }
+
+            // Save initial state to history
+            saveHistory();
+            
+            // Auto-save every 30 seconds
+            setInterval(autoSave, 30000);
+            
+            // Start render loop
+            render();
+        }
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+
+        // ===============================
+        // Rendering
+        // ===============================
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.save();
+            ctx.translate(panOffset.x, panOffset.y);
+            ctx.scale(zoom, zoom);
+            
+            // Draw connections
+            currentMap.connections.forEach(conn => conn.draw(ctx));
+            
+            // Draw nodes
+            currentMap.nodes.forEach(node => node.draw(ctx));
+            
+            // Draw connecting line if in connect mode
+            if (isConnecting && connectStart) {
+                ctx.strokeStyle = '#6366f1';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(connectStart.x, connectStart.y);
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = (lastMouseX - rect.left - panOffset.x) / zoom;
+                const mouseY = (lastMouseY - rect.top - panOffset.y) / zoom;
+                ctx.lineTo(mouseX, mouseY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            
+            ctx.restore();
+            
+            updateStats();
+            requestAnimationFrame(render);
+        }
+
+        // ===============================
+        // Event Handlers
+        // ===============================
+        let lastMouseX = 0, lastMouseY = 0;
+
+        function handleDoubleClick(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left - panOffset.x) / zoom;
+            const y = (e.clientY - rect.top - panOffset.y) / zoom;
+            
+            const text = prompt(t('prompt.node.text'));
+            if (text) {
+                const node = new Node(x, y, text, 'concept');
+                currentMap.nodes.push(node);
+                saveHistory();
+                saveHistory();
+                autoSave();
+            }
+        }
+
+        function handleMouseDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left - panOffset.x) / zoom;
+            const y = (e.clientY - rect.top - panOffset.y) / zoom;
+            
+            if (currentTool === 'delete') {
+                // Delete mode
+                for (let i = currentMap.nodes.length - 1; i >= 0; i--) {
+                    if (currentMap.nodes[i].isPointInside(x, y)) {
+                        const nodeToDelete = currentMap.nodes[i];
+                        currentMap.nodes.splice(i, 1);
+                        // Remove connections
+                        currentMap.connections = currentMap.connections.filter(
+                            c => c.source !== nodeToDelete && c.target !== nodeToDelete
+                        );
+                        saveHistory();
+                        autoSave();
+                        return;
+                    }
+                }
+            } else if (currentTool === 'connect') {
+                // Connect mode
+                for (let node of currentMap.nodes) {
+                    if (node.isPointInside(x, y)) {
+                        if (!isConnecting) {
+                            isConnecting = true;
+                            connectStart = node;
+                        } else {
+                            if (connectStart !== node) {
+                                const conn = new Connection(connectStart, node);
+                                currentMap.connections.push(conn);
+                                saveHistory();
+                                autoSave();
+                            }
+                            isConnecting = false;
+                            connectStart = null;
+                        }
+                        return;
+                    }
+                }
+            } else {
+                // Select mode
+                selectedNode = null;
+                for (let node of currentMap.nodes) {
+                    if (node.isPointInside(x, y)) {
+                        selectedNode = node;
+                        isDragging = true;
+                        dragOffset.x = x - node.x;
+                        dragOffset.y = y - node.y;
+                        showProperties(node);
+                        return;
+                    }
+                }
+
+                // Check if clicking on a connection
+                selectedConnection = null;
+                for (let connection of currentMap.connections) {
+                    if (isPointNearConnection(connection, x, y)) {
+                        selectedConnection = connection;
+                        showArrowPropertiesPanel(connection);
+                        return;
+                    }
+                }
+
+                // Pan with shift
+                if (e.shiftKey) {
+                    canvas.style.cursor = 'grabbing';
+                }
+            }
+        }
+
+        function handleMouseMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left - panOffset.x) / zoom;
+            const y = (e.clientY - rect.top - panOffset.y) / zoom;
+            
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+            
+            if (isDragging && selectedNode) {
+                selectedNode.x = x - dragOffset.x;
+                selectedNode.y = y - dragOffset.y;
+            } else if (e.shiftKey && e.buttons === 1) {
+                panOffset.x += e.movementX;
+                panOffset.y += e.movementY;
+            }
+            
+            // Update cursor
+            let hovering = false;
+            for (let node of currentMap.nodes) {
+                if (node.isPointInside(x, y)) {
+                    canvas.style.cursor = 'pointer';
+                    hovering = true;
+                    break;
+                }
+            }
+            
+            if (!hovering && !e.shiftKey) {
+                canvas.style.cursor = currentTool === 'delete' ? 'crosshair' : 'default';
+            } else if (e.shiftKey) {
+                canvas.style.cursor = 'grab';
+            }
+        }
+
+        function handleMouseUp(e) {
+            if (isDragging) {
+                isDragging = false;
+                saveHistory();
+                autoSave();
+            }
+            canvas.style.cursor = 'default';
+        }
+
+        function handleWheel(e) {
+            e.preventDefault();
+            const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            zoom *= scaleFactor;
+            zoom = Math.max(0.3, Math.min(3, zoom));
+        }
+
+        function handleKeyDown(e) {
+            if (e.key === 'Delete' && selectedNode) {
+                if (confirm(t('confirm.delete'))) {
+                    currentMap.nodes = currentMap.nodes.filter(n => n !== selectedNode);
+                    currentMap.connections = currentMap.connections.filter(
+                        c => c.source !== selectedNode && c.target !== selectedNode
+                    );
+                    selectedNode = null;
+                    closeProperties();
+                    saveHistory();
+                    autoSave();
+                }
+            } else if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                saveMap();
+            }
+        }
+
+        // ===============================
+        // Map Management
+        // ===============================
+        function newMap() {
+            if (currentMap.nodes.length > 0) {
+                if (!confirm(t('confirm.new'))) {
+                    return;
+                }
+            }
+            
+            currentMap = {
+                id: 'map_' + Date.now(),
+                title: t('app.title'),
+                mode: 'grinde',
+                nodes: [],
+                connections: [],
+                created: new Date().toISOString(),
+                modified: new Date().toISOString()
+            };
+            
+            // Add central node
+            const centerX = canvas.width / 2 / zoom - panOffset.x / zoom;
+            const centerY = canvas.height / 2 / zoom - panOffset.y / zoom;
+            const centralNode = new Node(centerX, centerY, t('node.central'), 'central');
+            currentMap.nodes.push(centralNode);
+        }
+
+        function saveMap() {
+            const title = prompt(t('prompt.map.title'), currentMap.title);
+            if (title) {
+                currentMap.title = title;
+                currentMap.modified = new Date().toISOString();
+                
+                // Convert to plain objects for storage
+                const mapData = {
+                    id: currentMap.id,
+                    title: currentMap.title,
+                    mode: currentMap.mode,
+                    created: currentMap.created,
+                    modified: currentMap.modified,
+                    nodes: currentMap.nodes.map(n => ({
+                        id: n.id,
+                        x: n.x,
+                        y: n.y,
+                        text: n.text,
+                        type: n.type,
+                        size: n.size,
+                        color: n.color,
+                        textSize: n.textSize,
+                        textColor: n.textColor,
+                        shape: n.shape,
+                        cornerRadius: n.cornerRadius,
+                        rotation: n.rotation
+                    })),
+                    connections: currentMap.connections.map(c => ({
+                        sourceId: c.source.id,
+                        targetId: c.target.id,
+                        type: c.type,
+                        color: c.color,
+                        text: c.text || ''
+                    }))
+                };
+                
+                // Save to localStorage
+                const maps = JSON.parse(localStorage.getItem('mindmaps') || '{}');
+                maps[currentMap.id] = mapData;
+                localStorage.setItem('mindmaps', JSON.stringify(maps));
+                
+                showToast(t('toast.saved'), 'success');
+                loadMapsList();
+            }
+        }
+
+        function autoSave() {
+            if (!autosaveEnabled) return;
+            if (currentMap.id) {
+                currentMap.modified = new Date().toISOString();
+                
+                const mapData = {
+                    id: currentMap.id,
+                    title: currentMap.title,
+                    mode: currentMap.mode,
+                    created: currentMap.created,
+                    modified: currentMap.modified,
+                    nodes: currentMap.nodes.map(n => ({
+                        id: n.id,
+                        x: n.x,
+                        y: n.y,
+                        text: n.text,
+                        type: n.type,
+                        size: n.size,
+                        color: n.color,
+                        textSize: n.textSize,
+                        textColor: n.textColor,
+                        shape: n.shape,
+                        cornerRadius: n.cornerRadius,
+                        rotation: n.rotation
+                    })),
+                    connections: currentMap.connections.map(c => ({
+                        sourceId: c.source.id,
+                        targetId: c.target.id,
+                        type: c.type,
+                        color: c.color,
+                        text: c.text || ''
+                    }))
+                };
+                
+                const maps = JSON.parse(localStorage.getItem('mindmaps') || '{}');
+                maps[currentMap.id] = mapData;
+                localStorage.setItem('mindmaps', JSON.stringify(maps));
+            }
+        }
+
+        function loadMapsList() {
+            const maps = JSON.parse(localStorage.getItem('mindmaps') || '{}');
+            const mapsList = document.getElementById('mapsList');
+            
+            if (Object.keys(maps).length === 0) {
+                mapsList.innerHTML = '<p style="color: #999; font-size: 13px;">Aucune carte sauvegardée</p>';
+                return;
+            }
+            
+            mapsList.innerHTML = '';
+            Object.values(maps).forEach(map => {
+                const mapItem = document.createElement('div');
+                mapItem.className = 'map-item';
+                if (map.id === currentMap.id) {
+                    mapItem.classList.add('active');
+                }
+
+                // Checkbox for bulk selection
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'map-checkbox';
+                checkbox.style.marginRight = '8px';
+                checkbox.dataset.mapId = map.id;
+
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'map-item-title';
+                titleDiv.textContent = map.title;
+
+                const metaDiv = document.createElement('div');
+                metaDiv.className = 'map-item-meta';
+                metaDiv.textContent = `${map.nodes?.length || 0} ${t('stat.nodes')} • ${map.mode}`;
+
+                const delBtn = document.createElement('button');
+                delBtn.className = 'btn';
+                delBtn.style.padding = '4px 8px';
+                delBtn.style.marginLeft = '8px';
+                delBtn.title = 'Delete saved map';
+                delBtn.textContent = '🗑️';
+                delBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteSavedMap(map.id);
+                };
+
+                mapItem.appendChild(checkbox);
+                mapItem.appendChild(titleDiv);
+                mapItem.appendChild(metaDiv);
+                mapItem.appendChild(delBtn);
+
+                mapItem.onclick = () => loadMap(map.id);
+                mapsList.appendChild(mapItem);
+            });
+
+            // Ensure deleteSelected button is enabled/disabled appropriately
+            updateDeleteSelectedState();
+        }
+
+        function toggleSelectAll(checked) {
+            document.querySelectorAll('.map-checkbox').forEach(cb => cb.checked = checked);
+            updateDeleteSelectedState();
+        }
+
+        function updateDeleteSelectedState() {
+            const any = Array.from(document.querySelectorAll('.map-checkbox')).some(cb => cb.checked);
+            const btn = document.getElementById('deleteSelectedBtn');
+            if (btn) btn.disabled = !any;
+        }
+
+        function deleteSelectedSavedMaps() {
+            const checked = Array.from(document.querySelectorAll('.map-checkbox')).filter(cb => cb.checked);
+            if (checked.length === 0) return;
+            if (!confirm(`Delete ${checked.length} selected map(s)?`)) return;
+
+            const maps = JSON.parse(localStorage.getItem('mindmaps') || '{}');
+            checked.forEach(cb => {
+                const id = cb.dataset.mapId;
+                if (maps[id]) delete maps[id];
+                // If current map is deleted, reset
+                if (currentMap && currentMap.id === id) newMap();
+            });
+            localStorage.setItem('mindmaps', JSON.stringify(maps));
+            showToast(t('toast.deleted'), 'success');
+            loadMapsList();
+        }
+
+        function loadMap(mapId) {
+            const maps = JSON.parse(localStorage.getItem('mindmaps') || '{}');
+            const mapData = maps[mapId];
+            
+            if (mapData) {
+                // Reconstruct nodes
+                const nodeMap = {};
+                currentMap.nodes = mapData.nodes.map(n => {
+                    const node = new Node(n.x, n.y, n.text, n.type);
+                    node.id = n.id;
+                    node.size = n.size;
+                    node.color = n.color;
+                    node.textSize = n.textSize;
+                    node.textColor = n.textColor;
+                    node.shape = n.shape;
+                    node.cornerRadius = n.cornerRadius;
+                    node.rotation = n.rotation || 0;
+                    nodeMap[n.id] = node;
+                    return node;
+                });
+                
+                // Reconstruct connections
+                currentMap.connections = mapData.connections.map(c => {
+                    const conn = new Connection(nodeMap[c.sourceId], nodeMap[c.targetId], c.type);
+                    conn.color = c.color;
+                    return conn;
+                });
+                
+                currentMap.id = mapData.id;
+                currentMap.title = mapData.title;
+                currentMap.mode = mapData.mode;
+                currentMap.created = mapData.created;
+                currentMap.modified = mapData.modified;
+                
+                setMode(currentMap.mode);
+                showToast(t('toast.loaded'), 'success');
+                closeModal('loadModal');
+                loadMapsList();
+                saveHistory();
+            }
+        }
+
+        function loadMapDialog() {
+            const modal = document.getElementById('loadModal');
+            const mapsList = document.getElementById('loadMapsList');
+            const maps = JSON.parse(localStorage.getItem('mindmaps') || '{}');
+            
+            mapsList.innerHTML = '';
+            Object.values(maps).forEach(map => {
+                const mapItem = document.createElement('div');
+                mapItem.style.padding = '10px';
+                mapItem.style.marginBottom = '8px';
+                mapItem.style.border = '1px solid #e5e7eb';
+                mapItem.style.borderRadius = '8px';
+                mapItem.style.cursor = 'pointer';
+
+                const left = document.createElement('div');
+                left.style.display = 'inline-block';
+                left.style.verticalAlign = 'middle';
+                left.innerHTML = `
+                    <div style="font-weight: 600;">${map.title}</div>
+                    <div style="font-size: 12px; color: #999;">
+                        ${new Date(map.modified).toLocaleDateString()} • 
+                        ${map.nodes?.length || 0} ${t('stat.nodes')}
+                    </div>
+                `;
+
+                const delBtn = document.createElement('button');
+                delBtn.className = 'btn';
+                delBtn.style.float = 'right';
+                delBtn.style.padding = '4px 8px';
+                delBtn.textContent = '🗑️';
+                delBtn.title = 'Delete saved map';
+                delBtn.onclick = (e) => { e.stopPropagation(); deleteSavedMap(map.id); };
+
+                mapItem.appendChild(left);
+                mapItem.appendChild(delBtn);
+                mapItem.onclick = () => loadMap(map.id);
+                mapsList.appendChild(mapItem);
+            });
+            
+            modal.classList.add('active');
+        }
+
+        function deleteSavedMap(mapId) {
+            if (!confirm('Delete this saved map?')) return;
+            const maps = JSON.parse(localStorage.getItem('mindmaps') || '{}');
+            if (maps[mapId]) {
+                delete maps[mapId];
+                localStorage.setItem('mindmaps', JSON.stringify(maps));
+                showToast(t('toast.deleted'), 'success');
+
+                // If the deleted map is currently loaded, reset to a new map
+                if (currentMap && currentMap.id === mapId) {
+                    newMap();
+                }
+
+                // Refresh lists
+                loadMapsList();
+                const loadModal = document.getElementById('loadModal');
+                if (loadModal && loadModal.classList.contains('active')) {
+                    loadMapDialog();
+                }
+            }
+        }
+
+        function clearCanvas() {
+            if (confirm(t('confirm.new'))) {
+                currentMap.nodes = [];
+                currentMap.connections = [];
+                selectedNode = null;
+                closeProperties();
+                saveHistory();
+                autoSave();
+            }
+        }
+
+        function exportMap(format) {
+            if (format === 'json') {
+                const mapData = {
+                    title: currentMap.title,
+                    mode: currentMap.mode,
+                    nodes: currentMap.nodes.map(n => ({
+                        text: n.text,
+                        type: n.type,
+                        x: n.x,
+                        y: n.y,
+                        size: n.size,
+                        color: n.color,
+                        textSize: n.textSize,
+                        textColor: n.textColor,
+                        shape: n.shape,
+                        cornerRadius: n.cornerRadius,
+                        rotation: n.rotation
+                    })),
+                    connections: currentMap.connections.map(c => ({
+                        sourceId: c.source.id,
+                        targetId: c.target.id,
+                        type: c.type,
+                        text: c.text || ''
+                    }))
+                };
+                
+                const dataStr = JSON.stringify(mapData, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                
+                const exportFileDefaultName = currentMap.title + '.json';
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+                
+                showToast(t('toast.exported'), 'success');
+            }
+        }
+
+        function loadTemplate(templateId) {
+            const template = templates[templateId];
+            if (template) {
+                currentMap.title = template.title;
+                currentMap.mode = template.mode;
+                currentMap.nodes = [];
+                currentMap.connections = [];
+                selectedNode = null; // Clear selection when loading template
+                
+                // Create nodes from template
+                template.nodes.forEach(nodeData => {
+                    const node = new Node(nodeData.x, nodeData.y, nodeData.text, nodeData.type);
+                    currentMap.nodes.push(node);
+                });
+                
+                // Connect to central if exists
+                const central = currentMap.nodes.find(n => n.type === 'central');
+                if (central) {
+                    currentMap.nodes.forEach(node => {
+                        if (node !== central && node.type === 'group') {
+                            currentMap.connections.push(new Connection(central, node));
+                        }
+                    });
+                    // Select the central node by default for easy addition of new nodes
+                    selectedNode = central;
+                    showProperties(central);
+                }
+                
+                setMode(currentMap.mode);
+                showToast(t('toast.loaded'), 'success');
+                saveHistory();
+            }
+        }
+
+        // ===============================
+        // Node Management
+        // ===============================
+        function addNode(type) {
+            // Show inline quick-add form for better UX
+            showQuickAddForType(type);
+        }
+
+        function toggleToolbox() {
+            // toolbox removed; no-op
+            return;
+        }
+
+        function showQuickAddForType(type) {
+            const quick = document.getElementById('quickAdd');
+            const txt = document.getElementById('quickAddText');
+            if (!quick || !txt) return;
+            quick.dataset.type = type;
+            txt.value = '';
+            quick.style.display = 'block';
+            txt.focus();
+        }
+
+        function addNodeFromQuickAdd() {
+            const quick = document.getElementById('quickAdd');
+            const txt = document.getElementById('quickAddText');
+            if (!quick || !txt) return;
+            const type = quick.dataset.type || 'concept';
+            const text = txt.value.trim() || t('prompt.node.text') + '...';
+
+            // compute location
+            let nodeX, nodeY;
+            if (selectedNode && type !== 'central') {
+                const angle = Math.random() * 2 * Math.PI;
+                const distance = 120 + Math.random() * 80;
+                nodeX = selectedNode.x + Math.cos(angle) * distance;
+                nodeY = selectedNode.y + Math.sin(angle) * distance;
+            } else {
+                const centerX = canvas.width / 2 / zoom - panOffset.x / zoom;
+                const centerY = canvas.height / 2 / zoom - panOffset.y / zoom;
+                nodeX = centerX + Math.random() * 100 - 50;
+                nodeY = centerY + Math.random() * 100 - 50;
+            }
+
+            const node = new Node(nodeX, nodeY, text, type);
+            currentMap.nodes.push(node);
+            if (type !== 'central') {
+                let parentNode = selectedNode || currentMap.nodes.find(n => n.type === 'central');
+                if (parentNode) currentMap.connections.push(new Connection(parentNode, node));
+            }
+            saveHistory();
+            autoSave();
+            hideQuickAdd();
+        }
+
+        function hideQuickAdd() {
+            const quick = document.getElementById('quickAdd');
+            if (!quick) return;
+            quick.style.display = 'none';
+        }
+
+        // ===============================
+        // Properties Panel
+        // ===============================
+        function showProperties(node) {
+            const panel = document.getElementById('propertiesPanel');
+            panel.classList.add('active');
+            // Use an editing buffer so Cancel can discard changes
+            editingNode = Object.assign({}, node);
+
+            document.getElementById('nodeText').value = editingNode.text;
+            document.getElementById('nodeTextSize').value = editingNode.textSize || Math.round(editingNode.size * 0.7);
+            document.getElementById('nodeSize').value = editingNode.size;
+            document.getElementById('nodeTextColor').value = editingNode.textColor || '#ffffff';
+            document.getElementById('nodeColor').value = editingNode.color || '#6366f1';
+            document.getElementById('nodeShape').value = editingNode.shape || 'rounded';
+            document.getElementById('nodeCornerRadius').value = editingNode.cornerRadius || 8;
+            // initial preview
+            drawPreview(editingNode);
+            selectedNode = node; // store reference to the original until saved
+        }
+        function closeProperties() {
+            document.getElementById('propertiesPanel').classList.remove('active');
+            editingNode = null;
+            selectedNode = null;
+        }
+
+        function updateNodeProperty(property) {
+            if (!editingNode) return;
+            if (property === 'text') {
+                editingNode.text = document.getElementById('nodeText').value;
+            } else if (property === 'size') {
+                editingNode.size = parseInt(document.getElementById('nodeSize').value);
+            } else if (property === 'textSize') {
+                editingNode.textSize = parseInt(document.getElementById('nodeTextSize').value);
+            } else if (property === 'textColor') {
+                editingNode.textColor = document.getElementById('nodeTextColor').value;
+            } else if (property === 'color') {
+                editingNode.color = document.getElementById('nodeColor').value;
+            } else if (property === 'shape') {
+                editingNode.shape = document.getElementById('nodeShape').value;
+            } else if (property === 'cornerRadius') {
+                editingNode.cornerRadius = parseInt(document.getElementById('nodeCornerRadius').value);
+            } else if (property === 'rotation') {
+                editingNode.rotation = parseInt(document.getElementById('nodeRotation').value);
+            }
+            // live preview: apply to selectedNode visually but don't persist until Save
+            if (selectedNode && editingNode) {
+                // copy preview properties
+                selectedNode.text = editingNode.text;
+                selectedNode.size = editingNode.size;
+                selectedNode.textSize = editingNode.textSize;
+                selectedNode.textColor = editingNode.textColor;
+                selectedNode.color = editingNode.color;
+                selectedNode.shape = editingNode.shape;
+                selectedNode.cornerRadius = editingNode.cornerRadius || 8;
+                selectedNode.rotation = editingNode.rotation || 0;
+                // update preview canvas
+                drawPreview(editingNode);
+            }
+        }
+
+        function setNodeColor(color, el) {
+            if (!editingNode) return;
+            editingNode.color = color;
+            document.getElementById('nodeColor').value = color;
+            document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
+            if (el && el.classList) el.classList.add('selected');
+            updateNodeProperty('color');
+        }
+
+        function saveProperties() {
+            if (!selectedNode || !editingNode) return;
+            // apply all editingNode properties to the actual node
+            selectedNode.text = editingNode.text;
+            selectedNode.size = editingNode.size;
+            selectedNode.textSize = editingNode.textSize;
+            selectedNode.textColor = editingNode.textColor;
+            selectedNode.color = editingNode.color;
+            selectedNode.shape = editingNode.shape;
+            selectedNode.cornerRadius = editingNode.cornerRadius || 8;
+
+            editingNode = null;
+            closeProperties();
+            saveHistory();
+            autoSave();
+        }
+
+        function cancelProperties() {
+            // revert preview by reloading node from stored map (reload by id)
+            if (selectedNode && selectedNode.id) {
+                const orig = currentMap.nodes.find(n => n.id === selectedNode.id);
+                if (orig) {
+                    // restore original properties
+                    selectedNode.text = orig.text;
+                    selectedNode.size = orig.size;
+                    selectedNode.textSize = orig.textSize;
+                    selectedNode.textColor = orig.textColor;
+                    selectedNode.color = orig.color;
+                    selectedNode.shape = orig.shape;
+                        selectedNode.cornerRadius = orig.cornerRadius;
+                        selectedNode.rotation = orig.rotation || 0;
+                }
+            }
+            editingNode = null;
+            closeProperties();
+        }
+
+        // Arrow properties functions
+        function showArrowPropertiesPanel(connection) {
+            selectedConnection = connection;
+            const panel = document.getElementById('arrowPropertiesPanel');
+            panel.classList.add('active');
+            document.getElementById('arrowId').value = connection.id;
+            document.getElementById('arrowText').value = connection.text || '';
+        }
+
+        function closeArrowPropertiesPanel() {
+            const panel = document.getElementById('arrowPropertiesPanel');
+            panel.classList.remove('active');
+            selectedConnection = null;
+        }
+
+        function saveArrowProperties() {
+            if (!selectedConnection) return;
+            selectedConnection.text = document.getElementById('arrowText').value;
+            closeArrowPropertiesPanel();
+            saveHistory();
+            autoSave();
+            showToast(t('toast.saved'), 'success');
+        }
+
+        function cancelArrowProperties() {
+            closeArrowPropertiesPanel();
+        }
+
+        // -------------------------------
+        // Preview rendering inside properties panel
+        // -------------------------------
+        function drawPreview(node) {
+            const cvs = document.getElementById('propPreview');
+            if (!cvs || !node) return;
+            const cctx = cvs.getContext('2d');
+            cctx.clearRect(0,0,cvs.width,cvs.height);
+            // Draw a small representation centered
+            const x = cvs.width / 2;
+            const y = cvs.height / 2;
+            const temp = new Node(x, y, node.text || 'Text', node.type || 'concept');
+            // copy properties
+            temp.size = node.size || 30;
+            temp.color = node.color || '#6366f1';
+            temp.textSize = node.textSize || Math.round(temp.size * 0.7);
+            temp.textColor = node.textColor || '#ffffff';
+            temp.shape = node.shape || 'rounded';
+            temp.cornerRadius = node.cornerRadius || 8;
+            // override draw to use provided context
+            temp.draw(cctx);
+        }
+
+        // -------------------------------
+        // Simple history (serialize currentMap)
+        // -------------------------------
+        function snapshot() {
+            return JSON.stringify({ nodes: currentMap.nodes.map(n => ({ id:n.id, x:n.x,y:n.y,text:n.text,type:n.type,size:n.size,color:n.color,textSize:n.textSize,textColor:n.textColor,shape:n.shape,cornerRadius:n.cornerRadius })), connections: currentMap.connections.map(c=>({sourceId:c.source.id,targetId:c.target.id,type:c.type,color:c.color,text:c.text || ''})) });
+        }
+
+        function saveHistory() {
+            const snap = snapshot();
+            // truncate future
+            history = history.slice(0, historyIndex + 1);
+            history.push(snap);
+            historyIndex = history.length - 1;
+        }
+
+        function restoreFromSnapshot(snap) {
+            try {
+                const data = JSON.parse(snap);
+                const nodeMap = {};
+                currentMap.nodes = data.nodes.map(n => {
+                    const node = new Node(n.x, n.y, n.text, n.type);
+                    node.id = n.id;
+                    node.size = n.size;
+                    node.color = n.color;
+                    node.textSize = n.textSize;
+                    node.textColor = n.textColor;
+                    node.shape = n.shape;
+                    node.cornerRadius = n.cornerRadius;
+                    node.rotation = n.rotation || 0;
+                    nodeMap[n.id] = node;
+                    return node;
+                });
+                currentMap.connections = data.connections.map(c => new Connection(nodeMap[c.sourceId], nodeMap[c.targetId], c.type));
+                // restore text labels
+                currentMap.connections.forEach((conn, idx) => {
+                    if (data.connections[idx] && data.connections[idx].text) conn.text = data.connections[idx].text;
+                });
+            } catch (err) {
+                console.error('Failed to restore snapshot', err);
+            }
+        }
+
+        function undo() {
+            if (historyIndex <= 0) return;
+            historyIndex--;
+            restoreFromSnapshot(history[historyIndex]);
+        }
+
+        function redo() {
+            if (historyIndex >= history.length - 1) return;
+            historyIndex++;
+            restoreFromSnapshot(history[historyIndex]);
+        }
+
+        // ===============================
+        // UI Controls
+        // ===============================
+        function setMode(mode) {
+            // Only Buzan mode is supported now
+            currentMap.mode = 'buzan';
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            const btn = document.querySelector('.mode-btn.buzan');
+            if (btn) btn.classList.add('active');
+            document.getElementById('currentMode').textContent = 'BUZAN';
+        }
+
+        function openGuide() {
+            document.getElementById('guideModal').classList.add('active');
+        }
+
+        function toggleAutosave(enabled) {
+            autosaveEnabled = !!enabled;
+            const el = document.getElementById('autosaveToggle');
+            if (el) el.checked = autosaveEnabled;
+        }
+
+        function setTool(tool) {
+            currentTool = tool;
+            isConnecting = false;
+            connectStart = null;
+            canvas.style.cursor = tool === 'delete' ? 'crosshair' : 'default';
+            // Toggle active class on toolbar buttons
+            document.querySelectorAll('.toolbar .tool-group .btn').forEach(btn => btn.classList.remove('active'));
+            // find a button whose onclick contains the tool name (best-effort)
+            const btns = Array.from(document.querySelectorAll('.toolbar .btn'));
+            for (let b of btns) {
+                const on = b.getAttribute('onclick') || '';
+                if (on.includes(`setTool('${tool}')`) || on.includes(`setTool("${tool}")`)) { b.classList.add('active'); break; }
+            }
+        }
+
+        function zoomIn() {
+            zoom = Math.min(zoom * 1.2, 3);
+        }
+
+        function zoomOut() {
+            zoom = Math.max(zoom * 0.8, 0.3);
+        }
+
+        function resetView() {
+            zoom = 1;
+            panOffset = { x: 0, y: 0 };
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('hidden');
+        }
+
+        function showSidebarTab(tab) {
+            document.querySelectorAll('.sidebar-pane').forEach(pane => {
+                pane.style.display = 'none';
+            });
+            document.getElementById(`${tab}-tab`).style.display = 'block';
+            
+            document.querySelectorAll('.sidebar-tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function updateStats() {
+            document.getElementById('nodeCount').textContent = currentMap.nodes.length;
+            document.getElementById('connectionCount').textContent = currentMap.connections.length;
+        }
+
+        // ===============================
+        // Language Management
+        // ===============================
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.lang-btn.${lang}`).classList.add('active');
+            
+            // Update all texts
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (i18n[lang][key]) {
+                    element.textContent = i18n[lang][key];
+                }
+            });
+
+            // Populate job aid / help content if present
+            const jobAidEl = document.getElementById('jobAid');
+            if (jobAidEl && i18n[lang] && i18n[lang]['jobaid.lines']) {
+                const lines = i18n[lang]['jobaid.lines'];
+                jobAidEl.innerHTML = '';
+                lines.forEach(line => {
+                    if (line === '') {
+                        jobAidEl.appendChild(document.createElement('br'));
+                    } else {
+                        const p = document.createElement('p');
+                        p.style.marginBottom = '8px';
+                        p.textContent = line;
+                        jobAidEl.appendChild(p);
+                    }
+                });
+            }
+            
+            localStorage.setItem('language', lang);
+            // set property panel button labels
+            const saveBtn = document.getElementById('propSaveBtn');
+            const cancelBtn = document.getElementById('propCancelBtn');
+            if (saveBtn) saveBtn.textContent = i18n[lang]['prop.save'] || 'Save';
+            if (cancelBtn) cancelBtn.textContent = i18n[lang]['prop.cancel'] || 'Cancel';
+            // set guide static bits if present
+            const guideLabel = document.getElementById('guideLabel');
+            if (guideLabel) guideLabel.textContent = i18n[lang]['sidebar.guides'] || 'Guide';
+        }
+
+        function toggleGuide(id) {
+            const body = document.getElementById(`guide-${id}-body`);
+            if (!body) return;
+            body.style.display = body.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function t(key) {
+            return i18n[currentLanguage][key] || key;
+        }
+
+        // ===============================
+        // Toast Notifications
+        // ===============================
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideUp 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ===============================
+        // Initialize on load
+        // ===============================
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

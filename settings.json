@@ -1,0 +1,14 @@
+{
+    "autosave": {
+        "default": true,
+        "frequency_seconds": 60
+    },
+    "ui": {
+        "theme": "light",
+        "language": "fr"
+    },
+    "canvas": {
+        "zoom_sensitivity": 1.0,
+        "pan_sensitivity": 1.0
+    }
+}

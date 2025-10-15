@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindMap Master - Outil de Mind Mapping Professionnel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --dark: #1f2937;
+            --light: #f3f4f6;
+            --white: #ffffff;
+            --grinde-color: #8b5cf6;
+            --buzan-color: #06b6d4;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            background: var(--light);
+            padding: 5px;
+            border-radius: 10px;
+        }
+
+        .mode-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            background: transparent;
+            color: var(--dark);
+        }
+
+        .mode-btn.active {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .mode-btn.grinde.active {
+            color: var(--grinde-color);
+            border: 2px solid var(--grinde-color);
+        }
+
+        .mode-btn.buzan.active {
+            color: var(--buzan-color);
+            border: 2px solid var(--buzan-color);
+        }
+
+        /* Toolbar */
+        .toolbar {
+            background: white;
+            padding: 1rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            align-items: center;
+        }
+
+        .tool-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            padding: 0 1rem;
+            border-right: 2px solid var(--light);
+        }
+
+        .tool-group:last-child {
+            border-right: none;
+        }
+
+        .tool-btn {
+            padding: 8px 12px;
+            border: 2px solid var(--light);
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+
+        .tool-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .tool-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Main Container */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 140px);
+            position: relative;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-section {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--light);
+        }
+
+        .sidebar-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+
+        /* Canvas */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: white;
+            background-image: 
+                radial-gradient(circle at 1px 1px, #e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        #canvas.grabbing {
+            cursor: grabbing;
+        }
+
+        /* Node Styles */
+        .node {
+            position: absolute;
+            padding: 10px 15px;
+            border-radius: 10px;
+            background: white;
+            border: 2px solid var(--primary);
+            cursor: move;
+            transition: all 0.3s ease;
+            min-width: 100px;
+            text-align: center;
+            font-weight: 500;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .node:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .node.central {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 15px 25px;
+            border: 3px solid white;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .node.group {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            border-color: #f59e0b;
+            color: white;
+        }
+
+        .node.concept {
+            background: linear-gradient(135deg, #34d399, #10b981);
+            border-color: #10b981;
+            color: white;
+        }
+
+        .node.detail {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+            color: var(--dark);
+        }
+
+        /* Guide Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .close-btn {
+            font-size: 2rem;
+            cursor: pointer;
+            color: var(--dark);
+            background: none;
+            border: none;
+            transition: transform 0.3s ease;
+        }
+
+        .close-btn:hover {
+            transform: rotate(90deg);
+        }
+
+        /* Guide Content */
+        .guide-section {
+            margin-bottom: 2rem;
+        }
+
+        .guide-section h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .guide-section h4 {
+            color: var(--dark);
+            margin: 1rem 0 0.5rem 0;
+        }
+
+        .principle-card {
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 0.8rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        .principle-card.grinde {
+            border-left-color: var(--grinde-color);
+        }
+
+        .principle-card.buzan {
+            border-left-color: var(--buzan-color);
+        }
+
+        /* Properties Panel */
+        .properties-panel {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            width: 250px;
+            display: none;
+        }
+
+        .properties-panel.active {
+            display: block;
+            animation: slideInRight 0.3s ease;
+        }
+
+        .property-group {
+            margin-bottom: 1rem;
+        }
+
+        .property-label {
+            font-size: 0.9rem;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .property-input {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid var(--light);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .color-options {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .color-option:hover {
+            transform: scale(1.2);
+        }
+
+        .color-option.selected {
+            border-color: var(--dark);
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+            font-size: 24px;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .fab:hover {
+            transform: scale(1.1) rotate(90deg);
+        }
+
+        /* Stats Panel */
+        .stats-panel {
+            position: absolute;
+            left: 20px;
+            bottom: 20px;
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--dark);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { 
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to { 
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInRight {
+            from { 
+                transform: translateX(50px);
+                opacity: 0;
+            }
+            to { 
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Tips Tooltip */
+        .tooltip {
+            position: absolute;
+            background: var(--dark);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .tooltip.active {
+            opacity: 1;
+        }
+
+        /* Export Options */
+        .export-menu {
+            position: absolute;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            padding: 0.5rem;
+            display: none;
+            z-index: 100;
+        }
+
+        .export-menu.active {
+            display: block;
+        }
+
+        .export-option {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+
+        .export-option:hover {
+            background: var(--light);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                z-index: 50;
+                height: 100%;
+            }
+            
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .tool-group {
+                border-right: none;
+                border-bottom: 2px solid var(--light);
+                padding-bottom: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            <svg width="30" height="30" viewBox="0 0 30 30" fill="currentColor">
+                <circle cx="15" cy="15" r="3"/>
+                <circle cx="5" cy="10" r="2"/>
+                <circle cx="25" cy="10" r="2"/>
+                <circle cx="5" cy="20" r="2"/>
+                <circle cx="25" cy="20" r="2"/>
+                <line x1="15" y1="15" x2="5" y2="10" stroke="currentColor" stroke-width="1"/>
+                <line x1="15" y1="15" x2="25" y2="10" stroke="currentColor" stroke-width="1"/>
+                <line x1="15" y1="15" x2="5" y2="20" stroke="currentColor" stroke-width="1"/>
+                <line x1="15" y1="15" x2="25" y2="20" stroke="currentColor" stroke-width="1"/>
+            </svg>
+            MindMap Master
+        </div>
+        
+        <div class="mode-selector">
+            <button class="mode-btn grinde active" onclick="setMode('grinde')">
+                🧠 GRINDE Map
+            </button>
+            <button class="mode-btn buzan" onclick="setMode('buzan')">
+                🌟 Buzan Map
+            </button>
+        </div>
+        
+        <div class="header-actions">
+            <button class="tool-btn" onclick="showGuide()">
+                📖 Guide
+            </button>
+            <button class="tool-btn" onclick="saveMap()">
+                💾 Sauvegarder
+            </button>
+            <button class="tool-btn" onclick="loadMap()">
+                📁 Charger
+            </button>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div class="tool-group">
+            <button class="tool-btn" onclick="addNode('central')">
+                ⭐ Nœud Central
+            </button>
+            <button class="tool-btn" onclick="addNode('group')">
+                📦 Groupe
+            </button>
+            <button class="tool-btn" onclick="addNode('concept')">
+                💡 Concept
+            </button>
+            <button class="tool-btn" onclick="addNode('detail')">
+                📝 Détail
+            </button>
+        </div>
+        
+        <div class="tool-group">
+            <button class="tool-btn" onclick="setTool('connect')">
+                🔗 Connecter
+            </button>
+            <button class="tool-btn" onclick="setTool('arrow')">
+                ➡️ Flèche Direct.
+            </button>
+            <button class="tool-btn" onclick="setTool('emphasis')">
+                ⚡ Emphase
+            </button>
+        </div>
+        
+        <div class="tool-group">
+            <button class="tool-btn" onclick="addImage()">
+                🖼️ Image
+            </button>
+            <button class="tool-btn" onclick="addSymbol()">
+                🎨 Symbole
+            </button>
+            <button class="tool-btn" onclick="toggleColors()">
+                🎨 Couleurs
+            </button>
+        </div>
+        
+        <div class="tool-group">
+            <button class="tool-btn" onclick="zoomIn()">
+                🔍+ Zoom
+            </button>
+            <button class="tool-btn" onclick="zoomOut()">
+                🔍- Dézoom
+            </button>
+            <button class="tool-btn" onclick="resetView()">
+                🔄 Réinitialiser
+            </button>
+        </div>
+        
+        <div class="tool-group">
+            <button class="tool-btn" onclick="exportMap()">
+                📤 Exporter
+            </button>
+            <button class="tool-btn" onclick="collaborate()">
+                👥 Collaborer
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">🎯 Principes Actifs</div>
+                <div id="principles-list"></div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">📚 Bibliothèque</div>
+                <div id="templates">
+                    <button class="tool-btn" style="width: 100%; margin-bottom: 10px;">
+                        📊 Business Plan
+                    </button>
+                    <button class="tool-btn" style="width: 100%; margin-bottom: 10px;">
+                        🎓 Prise de Notes
+                    </button>
+                    <button class="tool-btn" style="width: 100%; margin-bottom: 10px;">
+                        💼 Projet
+                    </button>
+                    <button class="tool-btn" style="width: 100%;">
+                        🧪 Recherche
+                    </button>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">💡 Conseils</div>
+                <div id="tips" style="font-size: 14px; color: #6b7280;">
+                    <!-- Les conseils seront ajoutés dynamiquement -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas -->
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+            
+            <!-- Properties Panel -->
+            <div class="properties-panel" id="propertiesPanel">
+                <h3 style="margin-bottom: 1rem;">Propriétés</h3>
+                <div class="property-group">
+                    <div class="property-label">Texte</div>
+                    <input type="text" class="property-input" id="nodeText" onchange="updateNodeText()">
+                </div>
+                <div class="property-group">
+                    <div class="property-label">Taille</div>
+                    <input type="range" class="property-input" id="nodeSize" min="10" max="30" onchange="updateNodeSize()">
+                </div>
+                <div class="property-group">
+                    <div class="property-label">Couleur</div>
+                    <div class="color-options">
+                        <div class="color-option" style="background: #6366f1;" onclick="setNodeColor('#6366f1')"></div>
+                        <div class="color-option" style="background: #10b981;" onclick="setNodeColor('#10b981')"></div>
+                        <div class="color-option" style="background: #f59e0b;" onclick="setNodeColor('#f59e0b')"></div>
+                        <div class="color-option" style="background: #ef4444;" onclick="setNodeColor('#ef4444')"></div>
+                        <div class="color-option" style="background: #8b5cf6;" onclick="setNodeColor('#8b5cf6')"></div>
+                        <div class="color-option" style="background: #06b6d4;" onclick="setNodeColor('#06b6d4')"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats Panel -->
+            <div class="stats-panel">
+                <div class="stat-item">
+                    <div class="stat-value" id="nodeCount">0</div>
+                    <div class="stat-label">Nœuds</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="linkCount">0</div>
+                    <div class="stat-label">Connexions</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="groupCount">0</div>
+                    <div class="stat-label">Groupes</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Guide Modal -->
+    <div class="modal" id="guideModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">📚 Guide d'Utilisation - MindMap Master</h2>
+                <button class="close-btn" onclick="closeGuide()">&times;</button>
+            </div>
+            
+            <div class="guide-section">
+                <h3>🎯 Introduction</h3>
+                <p>MindMap Master est un outil professionnel de mind mapping conçu pour optimiser votre apprentissage et votre productivité. Choisissez entre deux méthodes éprouvées : <strong>GRINDE Maps</strong> (recommandé pour l'apprentissage) ou <strong>Buzan Maps</strong> (classique).</p>
+            </div>
+
+            <div class="guide-section">
+                <h3>🧠 Méthode GRINDE (Recommandée)</h3>
+                <p>Les GRINDE Maps sont optimisées pour l'apprentissage profond et la mémorisation à long terme.</p>
+                
+                <div class="principle-card grinde">
+                    <h4>G - Grouped (Regroupé)</h4>
+                    <p>Organisez les informations en chunks logiques. Créez des groupes visuels pour les concepts liés.</p>
+                </div>
+                
+                <div class="principle-card grinde">
+                    <h4>R - Reflective (Réflexif)</h4>
+                    <p>Prenez le temps de réfléchir aux connexions. Ne copiez pas, reformulez avec vos propres mots.</p>
+                </div>
+                
+                <div class="principle-card grinde">
+                    <h4>I - Interconnected (Interconnecté)</h4>
+                    <p>Créez des liens multiples entre les concepts. Les connexions renforcent la compréhension.</p>
+                </div>
+                
+                <div class="principle-card grinde">
+                    <h4>N - Non-verbal (Non-verbal)</h4>
+                    <p>Utilisez des images, symboles et couleurs. Le visuel améliore la mémorisation de 65%.</p>
+                </div>
+                
+                <div class="principle-card grinde">
+                    <h4>D - Directional (Directionnel)</h4>
+                    <p>Indiquez le flux logique avec des flèches. Montrez les relations de cause à effet.</p>
+                </div>
+                
+                <div class="principle-card grinde">
+                    <h4>E - Emphasized (Accentué)</h4>
+                    <p>Mettez en évidence les éléments clés. Utilisez taille, couleur et style pour hiérarchiser.</p>
+                </div>
+            </div>
+
+            <div class="guide-section">
+                <h3>🌟 Méthode Buzan (Classique)</h3>
+                <p>Les Buzan Maps suivent une structure radiante traditionnelle, idéale pour la créativité et les présentations.</p>
+                
+                <div class="principle-card buzan">
+                    <h4>Structure Radiante</h4>
+                    <p>Partez d'un centre et rayonnez vers l'extérieur. Chaque branche représente un thème majeur.</p>
+                </div>
+                
+                <div class="principle-card buzan">
+                    <h4>Un Mot-Clé par Branche</h4>
+                    <p>Utilisez des mots-clés uniques pour chaque branche. La simplicité favorise la mémorisation.</p>
+                </div>
+                
+                <div class="principle-card buzan">
+                    <h4>Couleurs et Images</h4>
+                    <p>Chaque branche principale a sa couleur. Les images stimulent les deux hémisphères du cerveau.</p>
+                </div>
+            </div>
+
+            <div class="guide-section">
+                <h3>💼 Utilisation en Entreprise</h3>
+                <h4>📊 Brainstorming</h4>
+                <p>Utilisez le mode GRINDE pour explorer toutes les facettes d'un problème complexe.</p>
+                
+                <h4>📈 Gestion de Projet</h4>
+                <p>Créez une vue d'ensemble avec les dépendances et les flux de travail.</p>
+                
+                <h4>🎯 Prise de Décision</h4>
+                <p>Visualisez les options, les pour/contre et les implications.</p>
+                
+                <h4>📚 Formation</h4>
+                <p>Synthétisez les formations et créez des supports visuels mémorables.</p>
+            </div>
+
+            <div class="guide-section">
+                <h3>⚡ Raccourcis Clavier</h3>
+                <ul style="list-style: none; padding: 0;">
+                    <li>📝 <strong>Double-clic</strong> : Créer un nouveau nœud</li>
+                    <li>🔗 <strong>Ctrl + Clic</strong> : Connecter deux nœuds</li>
+                    <li>🗑️ <strong>Delete</strong> : Supprimer l'élément sélectionné</li>
+                    <li>💾 <strong>Ctrl + S</strong> : Sauvegarder la carte</li>
+                    <li>📤 <strong>Ctrl + E</strong> : Exporter la carte</li>
+                    <li>🔍 <strong>Ctrl + Molette</strong> : Zoomer/Dézoomer</li>
+                    <li>↔️ <strong>Espace + Glisser</strong> : Naviguer dans la carte</li>
+                </ul>
+            </div>
+
+            <div class="guide-section">
+                <h3>💡 Conseils Pro</h3>
+                <ul style="padding-left: 20px;">
+                    <li><strong>Commencez simple</strong> : Un concept central clair, puis développez progressivement.</li>
+                    <li><strong>Limitez le texte</strong> : Maximum 3 mots par nœud pour une meilleure lisibilité.</li>
+                    <li><strong>Utilisez la hiérarchie visuelle</strong> : Gros = Important, Petit = Détail.</li>
+                    <li><strong>Révisez régulièrement</strong> : Revenez sur vos cartes pour renforcer la mémorisation.</li>
+                    <li><strong>Collaborez</strong> : Partagez vos cartes pour enrichir les perspectives.</li>
+                    <li><strong>Exportez en PDF</strong> : Pour les présentations et la documentation.</li>
+                </ul>
+            </div>
+
+            <div class="guide-section">
+                <h3>🚀 Pour Commencer</h3>
+                <ol style="padding-left: 20px;">
+                    <li>Choisissez votre méthode (GRINDE recommandé)</li>
+                    <li>Créez un nœud central avec votre sujet principal</li>
+                    <li>Ajoutez des branches pour les thèmes majeurs</li>
+                    <li>Développez avec des sous-concepts et détails</li>
+                    <li>Connectez les idées liées entre elles</li>
+                    <li>Ajoutez couleurs et images pour renforcer</li>
+                    <li>Exportez ou partagez votre création</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" onclick="quickAdd()">+</button>
+
+    <!-- Export Menu -->
+    <div class="export-menu" id="exportMenu">
+        <div class="export-option" onclick="exportAs('png')">📷 PNG</div>
+        <div class="export-option" onclick="exportAs('svg')">📐 SVG</div>
+        <div class="export-option" onclick="exportAs('pdf')">📄 PDF</div>
+        <div class="export-option" onclick="exportAs('json')">💾 JSON</div>
+    </div>
+
+    <script>
+        // État global de l'application
+        let currentMode = 'grinde';
+        let currentTool = 'select';
+        let nodes = [];
+        let connections = [];
+        let selectedNode = null;
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+        let canvas, ctx;
+        let zoom = 1;
+        let panOffset = { x: 0, y: 0 };
+        
+        // Classe Node
+        class Node {
+            constructor(x, y, text, type = 'concept') {
+                this.id = Date.now() + Math.random();
+                this.x = x;
+                this.y = y;
+                this.text = text;
+                this.type = type;
+                this.color = this.getDefaultColor();
+                this.size = this.getDefaultSize();
+                this.connections = [];
+                this.emphasis = false;
+                this.image = null;
+            }
+            
+            getDefaultColor() {
+                const colors = {
+                    'central': '#6366f1',
+                    'group': '#f59e0b',
+                    'concept': '#10b981',
+                    'detail': '#9ca3af'
+                };
+                return colors[this.type] || '#6366f1';
+            }
+            
+            getDefaultSize() {
+                const sizes = {
+                    'central': 30,
+                    'group': 25,
+                    'concept': 20,
+                    'detail': 15
+                };
+                return sizes[this.type] || 20;
+            }
+            
+            draw(ctx) {
+                ctx.save();
+                
+                // Ombre
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+                
+                // Dessiner le nœud
+                ctx.fillStyle = this.color;
+                ctx.strokeStyle = this.emphasis ? '#ef4444' : '#ffffff';
+                ctx.lineWidth = this.emphasis ? 4 : 2;
+                
+                if (this.type === 'central') {
+                    // Nœud central spécial
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                } else {
+                    // Nœuds rectangulaires arrondis
+                    const width = this.text.length * 8 + 20;
+                    const height = this.size * 2;
+                    const radius = 10;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(this.x - width/2 + radius, this.y - height/2);
+                    ctx.lineTo(this.x + width/2 - radius, this.y - height/2);
+                    ctx.quadraticCurveTo(this.x + width/2, this.y - height/2, this.x + width/2, this.y - height/2 + radius);
+                    ctx.lineTo(this.x + width/2, this.y + height/2 - radius);
+                    ctx.quadraticCurveTo(this.x + width/2, this.y + height/2, this.x + width/2 - radius, this.y + height/2);
+                    ctx.lineTo(this.x - width/2 + radius, this.y + height/2);
+                    ctx.quadraticCurveTo(this.x - width/2, this.y + height/2, this.x - width/2, this.y + height/2 - radius);
+                    ctx.lineTo(this.x - width/2, this.y - height/2 + radius);
+                    ctx.quadraticCurveTo(this.x - width/2, this.y - height/2, this.x - width/2 + radius, this.y - height/2);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+                
+                // Texte
+                ctx.fillStyle = this.type === 'detail' ? '#1f2937' : '#ffffff';
+                ctx.font = `${this.size * 0.7}px Inter, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.text, this.x, this.y);
+                
+                // Image/Symbole si présent
+                if (this.image) {
+                    ctx.drawImage(this.image, this.x - 15, this.y - 25, 30, 30);
+                }
+                
+                ctx.restore();
+            }
+            
+            isPointInside(x, y) {
+                if (this.type === 'central') {
+                    const dx = x - this.x;
+                    const dy = y - this.y;
+                    return Math.sqrt(dx * dx + dy * dy) <= this.size;
+                } else {
+                    const width = this.text.length * 8 + 20;
+                    const height = this.size * 2;
+                    return x >= this.x - width/2 && x <= this.x + width/2 &&
+                           y >= this.y - height/2 && y <= this.y + height/2;
+                }
+            }
+        }
+        
+        // Classe Connection
+        class Connection {
+            constructor(node1, node2, type = 'simple') {
+                this.id = Date.now() + Math.random();
+                this.node1 = node1;
+                this.node2 = node2;
+                this.type = type; // 'simple', 'arrow', 'double'
+                this.color = '#6366f1';
+                this.width = 2;
+            }
+            
+            draw(ctx) {
+                ctx.save();
+                
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = this.width;
+                
+                // Ligne de base
+                ctx.beginPath();
+                ctx.moveTo(this.node1.x, this.node1.y);
+                
+                if (currentMode === 'grinde') {
+                    // Connexion courbe pour GRINDE
+                    const cp1x = (this.node1.x + this.node2.x) / 2;
+                    const cp1y = this.node1.y;
+                    const cp2x = (this.node1.x + this.node2.x) / 2;
+                    const cp2y = this.node2.y;
+                    ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, this.node2.x, this.node2.y);
+                } else {
+                    // Connexion droite pour Buzan
+                    ctx.lineTo(this.node2.x, this.node2.y);
+                }
+                
+                ctx.stroke();
+                
+                // Flèche si nécessaire
+                if (this.type === 'arrow' || this.type === 'double') {
+                    const angle = Math.atan2(this.node2.y - this.node1.y, this.node2.x - this.node1.x);
+                    const arrowLength = 15;
+                    const arrowAngle = Math.PI / 6;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(this.node2.x, this.node2.y);
+                    ctx.lineTo(
+                        this.node2.x - arrowLength * Math.cos(angle - arrowAngle),
+                        this.node2.y - arrowLength * Math.sin(angle - arrowAngle)
+                    );
+                    ctx.moveTo(this.node2.x, this.node2.y);
+                    ctx.lineTo(
+                        this.node2.x - arrowLength * Math.cos(angle + arrowAngle),
+                        this.node2.y - arrowLength * Math.sin(angle + arrowAngle)
+                    );
+                    ctx.stroke();
+                }
+                
+                ctx.restore();
+            }
+        }
+        
+        // Initialisation
+        function init() {
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+            
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Event listeners
+            canvas.addEventListener('dblclick', handleDoubleClick);
+            canvas.addEventListener('mousedown', handleMouseDown);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseup', handleMouseUp);
+            canvas.addEventListener('wheel', handleWheel);
+            
+            // Raccourcis clavier
+            document.addEventListener('keydown', handleKeyDown);
+            
+            // Initialiser avec un nœud central
+            if (nodes.length === 0) {
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                nodes.push(new Node(centerX, centerY, 'Sujet Principal', 'central'));
+            }
+            
+            // Afficher les principes
+            updatePrinciplesList();
+            
+            // Afficher les conseils
+            showTips();
+            
+            // Démarrer l'animation
+            animate();
+        }
+        
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            render();
+        }
+        
+        // Rendu
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.save();
+            ctx.translate(panOffset.x, panOffset.y);
+            ctx.scale(zoom, zoom);
+            
+            // Dessiner les connexions
+            connections.forEach(conn => conn.draw(ctx));
+            
+            // Dessiner les nœuds
+            nodes.forEach(node => node.draw(ctx));
+            
+            ctx.restore();
+            
+            // Mettre à jour les statistiques
+            updateStats();
+        }
+        
+        function animate() {
+            render();
+            requestAnimationFrame(animate);
+        }
+        
+        // Gestion des événements
+        function handleDoubleClick(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left - panOffset.x) / zoom;
+            const y = (e.clientY - rect.top - panOffset.y) / zoom;
+            
+            const text = prompt('Texte du nouveau nœud:');
+            if (text) {
+                nodes.push(new Node(x, y, text, 'concept'));
+            }
+        }
+        
+        function handleMouseDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left - panOffset.x) / zoom;
+            const y = (e.clientY - rect.top - panOffset.y) / zoom;
+            
+            // Vérifier si un nœud est cliqué
+            for (let node of nodes) {
+                if (node.isPointInside(x, y)) {
+                    selectedNode = node;
+                    isDragging = true;
+                    dragOffset.x = x - node.x;
+                    dragOffset.y = y - node.y;
+                    
+                    // Afficher le panneau de propriétés
+                    showPropertiesPanel(node);
+                    break;
+                }
+            }
+            
+            if (!selectedNode && e.shiftKey) {
+                // Pan avec Shift
+                canvas.style.cursor = 'grabbing';
+            }
+        }
+        
+        function handleMouseMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left - panOffset.x) / zoom;
+            const y = (e.clientY - rect.top - panOffset.y) / zoom;
+            
+            if (isDragging && selectedNode) {
+                selectedNode.x = x - dragOffset.x;
+                selectedNode.y = y - dragOffset.y;
+            } else if (e.shiftKey && e.buttons === 1) {
+                // Pan
+                panOffset.x += e.movementX;
+                panOffset.y += e.movementY;
+            }
+            
+            // Curseur
+            let hovered = false;
+            for (let node of nodes) {
+                if (node.isPointInside(x, y)) {
+                    canvas.style.cursor = 'pointer';
+                    hovered = true;
+                    break;
+                }
+            }
+            if (!hovered && !e.shiftKey) {
+                canvas.style.cursor = 'default';
+            } else if (e.shiftKey) {
+                canvas.style.cursor = 'grab';
+            }
+        }
+        
+        function handleMouseUp(e) {
+            isDragging = false;
+            canvas.style.cursor = 'default';
+        }
+        
+        function handleWheel(e) {
+            e.preventDefault();
+            
+            const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            zoom *= scaleFactor;
+            zoom = Math.max(0.3, Math.min(3, zoom));
+        }
+        
+        function handleKeyDown(e) {
+            if (e.key === 'Delete' && selectedNode) {
+                // Supprimer le nœud sélectionné
+                nodes = nodes.filter(n => n !== selectedNode);
+                connections = connections.filter(c => c.node1 !== selectedNode && c.node2 !== selectedNode);
+                selectedNode = null;
+                document.getElementById('propertiesPanel').classList.remove('active');
+            } else if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                saveMap();
+            } else if (e.ctrlKey && e.key === 'e') {
+                e.preventDefault();
+                exportMap();
+            }
+        }
+        
+        // Fonctions de l'interface
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.mode-btn.${mode}`).classList.add('active');
+            updatePrinciplesList();
+            showNotification(`Mode ${mode === 'grinde' ? 'GRINDE' : 'Buzan'} activé`);
+        }
+        
+        function setTool(tool) {
+            currentTool = tool;
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+        
+        function addNode(type) {
+            const centerX = canvas.width / 2 / zoom - panOffset.x / zoom;
+            const centerY = canvas.height / 2 / zoom - panOffset.y / zoom;
+            const text = prompt(`Texte du nouveau ${type}:`);
+            
+            if (text) {
+                const node = new Node(
+                    centerX + Math.random() * 100 - 50,
+                    centerY + Math.random() * 100 - 50,
+                    text,
+                    type
+                );
+                nodes.push(node);
+                
+                // Auto-connecter au nœud central si c'est le premier
+                if (type !== 'central' && nodes.length > 1) {
+                    const central = nodes.find(n => n.type === 'central');
+                    if (central) {
+                        connections.push(new Connection(central, node));
+                    }
+                }
+            }
+        }
+        
+        function showPropertiesPanel(node) {
+            const panel = document.getElementById('propertiesPanel');
+            panel.classList.add('active');
+            document.getElementById('nodeText').value = node.text;
+            document.getElementById('nodeSize').value = node.size;
+        }
+        
+        function updateNodeText() {
+            if (selectedNode) {
+                selectedNode.text = document.getElementById('nodeText').value;
+            }
+        }
+        
+        function updateNodeSize() {
+            if (selectedNode) {
+                selectedNode.size = parseInt(document.getElementById('nodeSize').value);
+            }
+        }
+        
+        function setNodeColor(color) {
+            if (selectedNode) {
+                selectedNode.color = color;
+            }
+        }
+        
+        function updateStats() {
+            document.getElementById('nodeCount').textContent = nodes.length;
+            document.getElementById('linkCount').textContent = connections.length;
+            document.getElementById('groupCount').textContent = nodes.filter(n => n.type === 'group').length;
+        }
+        
+        function updatePrinciplesList() {
+            const list = document.getElementById('principles-list');
+            
+            if (currentMode === 'grinde') {
+                list.innerHTML = `
+                    <div style="font-size: 14px; line-height: 1.6;">
+                        <div style="margin-bottom: 10px;">✅ <strong>G</strong> - Regroupez les concepts</div>
+                        <div style="margin-bottom: 10px;">✅ <strong>R</strong> - Réfléchissez avant d'ajouter</div>
+                        <div style="margin-bottom: 10px;">✅ <strong>I</strong> - Interconnectez tout</div>
+                        <div style="margin-bottom: 10px;">✅ <strong>N</strong> - Utilisez des visuels</div>
+                        <div style="margin-bottom: 10px;">✅ <strong>D</strong> - Montrez la direction</div>
+                        <div style="margin-bottom: 10px;">✅ <strong>E</strong> - Accentuez l'important</div>
+                    </div>
+                `;
+            } else {
+                list.innerHTML = `
+                    <div style="font-size: 14px; line-height: 1.6;">
+                        <div style="margin-bottom: 10px;">🌟 Structure radiante</div>
+                        <div style="margin-bottom: 10px;">🌟 Un mot-clé par branche</div>
+                        <div style="margin-bottom: 10px;">🌟 Couleurs vibrantes</div>
+                        <div style="margin-bottom: 10px;">🌟 Images et symboles</div>
+                        <div style="margin-bottom: 10px;">🌟 Branches courbes</div>
+                        <div style="margin-bottom: 10px;">🌟 Hiérarchie claire</div>
+                    </div>
+                `;
+            }
+        }
+        
+        function showTips() {
+            const tips = [
+                "💡 Double-cliquez pour créer un nouveau nœud",
+                "💡 Maintenez Shift et glissez pour naviguer",
+                "💡 Utilisez la molette pour zoomer",
+                "💡 Supprimez avec la touche Delete",
+                "💡 Ctrl+S pour sauvegarder rapidement",
+                "💡 Les connexions courbes aident la mémorisation",
+                "💡 Limitez-vous à 3 mots par nœud",
+                "💡 Les couleurs améliorent la rétention de 80%"
+            ];
+            
+            const tipElement = document.getElementById('tips');
+            let currentTip = 0;
+            
+            function showNextTip() {
+                tipElement.innerHTML = tips[currentTip];
+                currentTip = (currentTip + 1) % tips.length;
+            }
+            
+            showNextTip();
+            setInterval(showNextTip, 5000);
+        }
+        
+        function showGuide() {
+            document.getElementById('guideModal').classList.add('active');
+        }
+        
+        function closeGuide() {
+            document.getElementById('guideModal').classList.remove('active');
+        }
+        
+        function saveMap() {
+            const data = {
+                mode: currentMode,
+                nodes: nodes.map(n => ({
+                    x: n.x,
+                    y: n.y,
+                    text: n.text,
+                    type: n.type,
+                    color: n.color,
+                    size: n.size
+                })),
+                connections: connections.map(c => ({
+                    node1Index: nodes.indexOf(c.node1),
+                    node2Index: nodes.indexOf(c.node2),
+                    type: c.type
+                }))
+            };
+            
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'mindmap.json';
+            a.click();
+            
+            showNotification('Carte sauvegardée !');
+        }
+        
+        function loadMap() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        
+                        // Recréer les nœuds
+                        nodes = data.nodes.map(n => {
+                            const node = new Node(n.x, n.y, n.text, n.type);
+                            node.color = n.color;
+                            node.size = n.size;
+                            return node;
+                        });
+                        
+                        // Recréer les connexions
+                        connections = data.connections.map(c => {
+                            return new Connection(
+                                nodes[c.node1Index],
+                                nodes[c.node2Index],
+                                c.type
+                            );
+                        });
+                        
+                        setMode(data.mode);
+                        showNotification('Carte chargée !');
+                    } catch (err) {
+                        showNotification('Erreur lors du chargement', 'error');
+                    }
+                };
+                
+                reader.readAsText(file);
+            };
+            
+            input.click();
+        }
+        
+        function exportMap() {
+            const menu = document.getElementById('exportMenu');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            menu.style.top = event.target.offsetTop + event.target.offsetHeight + 'px';
+            menu.style.left = event.target.offsetLeft + 'px';
+        }
+        
+        function exportAs(format) {
+            document.getElementById('exportMenu').style.display = 'none';
+            
+            if (format === 'png') {
+                canvas.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'mindmap.png';
+                    a.click();
+                });
+            } else if (format === 'json') {
+                saveMap();
+            } else {
+                showNotification(`Export ${format} en développement`, 'info');
+            }
+        }
+        
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                padding: 15px 30px;
+                background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+                color: white;
+                border-radius: 10px;
+                font-weight: 600;
+                z-index: 10000;
+                animation: slideUp 0.3s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+        
+        function zoomIn() {
+            zoom = Math.min(zoom * 1.2, 3);
+        }
+        
+        function zoomOut() {
+            zoom = Math.max(zoom * 0.8, 0.3);
+        }
+        
+        function resetView() {
+            zoom = 1;
+            panOffset = { x: 0, y: 0 };
+        }
+        
+        function addImage() {
+            showNotification('Fonction image en développement', 'info');
+        }
+        
+        function addSymbol() {
+            if (selectedNode) {
+                const symbols = ['⭐', '💡', '🎯', '📊', '🔥', '✨', '🚀', '💎'];
+                const symbol = prompt('Choisissez un symbole:\n' + symbols.join(' '));
+                if (symbol) {
+                    selectedNode.text = symbol + ' ' + selectedNode.text;
+                }
+            } else {
+                showNotification('Sélectionnez d\'abord un nœud', 'warning');
+            }
+        }
+        
+        function toggleColors() {
+            // Activer/désactiver le mode couleur
+            showNotification('Panneau de couleurs activé', 'info');
+        }
+        
+        function collaborate() {
+            showNotification('Mode collaboration: Partagez le lien de votre carte', 'info');
+        }
+        
+        function quickAdd() {
+            const centerX = canvas.width / 2 / zoom - panOffset.x / zoom;
+            const centerY = canvas.height / 2 / zoom - panOffset.y / zoom;
+            
+            const text = prompt('Ajout rapide - Texte du nœud:');
+            if (text) {
+                const node = new Node(
+                    centerX + Math.random() * 200 - 100,
+                    centerY + Math.random() * 200 - 100,
+                    text,
+                    'concept'
+                );
+                nodes.push(node);
+                
+                // Auto-connecter au dernier nœud sélectionné ou au central
+                if (selectedNode) {
+                    connections.push(new Connection(selectedNode, node));
+                } else {
+                    const central = nodes.find(n => n.type === 'central');
+                    if (central) {
+                        connections.push(new Connection(central, node));
+                    }
+                }
+            }
+        }
+        
+        // Démarrer l'application
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
