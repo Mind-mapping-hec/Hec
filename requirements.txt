@@ -116,11 +116,14 @@ nest-asyncio==1.6.0
 networkx==3.2.1
 ninja==1.11.1.4
 notebook_shim==0.2.4
-numpy # Version retirée
+
+# ✅ Section corrigée : dépendances scientifiques compatibles entre elles
+numpy>=2.0,<2.3
+onnxruntime==1.19.2
+opencv-python-headless==4.12.0.88
+
 oauthlib==3.3.1
-onnxruntime # Version retirée
 openai==1.101.0
-opencv-python-headless # Version retirée
 openpyxl==3.1.5
 opentelemetry-api==1.36.0
 opentelemetry-exporter-otlp-proto-common==1.36.0
